@@ -18,16 +18,22 @@ class ChatController extends GetxController {
   // ------current chat
   String? chatId;
 
+  // PERSONAL CHATS
+  final RxList<ChatRoom> chatRooms = <ChatRoom>[].obs;
+  RxList<ChatParticipant> selectedUsers = <ChatParticipant>[].obs;
+
   //
   final RxList<Message> allMessages = <Message>[].obs;
   final RxList<Message> uiMessages = <Message>[].obs;
   final RxSet<String> selectedMsgIds = <String>{}.obs;
   final RxList<ChatRoom> groups = <ChatRoom>[].obs;
+  final RxList<ChatRoom> filterChats = <ChatRoom>[].obs;
   final RxList<ChatRoom> filterGroups = <ChatRoom>[].obs;
-  final RxString groupSearchQuery = ''.obs;
+  final RxString searchQuery = ''.obs;
 
   //<----  SELECTION MODE ---->
   final RxBool selectionMode = false.obs;
+
   bool isInitialized = false;
 
   // fcmToken in cache
@@ -38,6 +44,7 @@ class ChatController extends GetxController {
   // --------Listener
   StreamSubscription<DatabaseEvent>? _msgSub;
   StreamSubscription<DatabaseEvent>? _groupSub;
+  StreamSubscription<DatabaseEvent>? _chatSub;
 
   @override
   void onInit() {
@@ -45,9 +52,13 @@ class ChatController extends GetxController {
 
     FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
+        listenChats();
         listenGroups();
 
-        ever(groupSearchQuery, (_) => _filterGroups());
+        ever(searchQuery, (_) {
+          _filterChats();
+          _filterGroups();
+        });
       }
     });
   }
@@ -137,7 +148,22 @@ class ChatController extends GetxController {
       final senderName = appCtrl.currentUserUsername.value;
       final time = DateTime.now().millisecondsSinceEpoch;
 
-      // Save message
+      /// TEMP MESSAGE (SHOW IN UI FIRST)
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+
+      final tempMessage = Message(
+        msgId: tempId,
+        senderId: senderId,
+        senderName: senderName,
+        text: text,
+        time: time,
+        isDeleted: false,
+        status: MessageStatus.sending, // ⏳
+      );
+
+      uiMessages.insert(0, tempMessage);
+
+      /// FIREBASE SAVE
       final ref = _db.child("messages").child(chatId!).push();
       final msgId = ref.key!;
 
@@ -145,12 +171,28 @@ class ChatController extends GetxController {
         "msgId": msgId,
         "senderId": senderId,
         "senderName": senderName,
-        "text": text,
-        "time": time,
+        "msgText": text,
+        "timeStamp": time,
         "isDeleted": false,
       });
 
-      // Update chatRoom
+      /// UPDATE STATUS TO SENT
+      final index = uiMessages.indexWhere((m) => m.msgId == tempId);
+      if (index != -1) {
+        uiMessages[index].status = MessageStatus.sent;
+        uiMessages[index] = Message(
+          msgId: msgId,
+          senderId: senderId,
+          senderName: senderName,
+          text: text,
+          time: time,
+          isDeleted: false,
+          status: MessageStatus.sent,
+        );
+        uiMessages.refresh();
+      }
+
+      /// UPDATE CHAT ROOM
       await _db.child("chatRooms/$chatId").update({
         "lastUpdated": time,
         "lastMsg": {
@@ -160,41 +202,64 @@ class ChatController extends GetxController {
           "timeStamp": time,
         },
       });
-      //log
-      CrashlyticsService.log(
-        "Sending message to chatId: $chatId",
-      );
-      // Unread count
-      final receiverUid = getReceiverUid();
 
-      await _db
-          .child("chatRooms/$chatId/unreadCount/$receiverUid")
-          .runTransaction((value) {
-            final current = (value as int?) ?? 0;
-            return Transaction.success(current + 1);
-          });
+      CrashlyticsService.log("Sending message to chatId: $chatId");
 
-      // Send notification
-      if (receiverUid != senderId) {
-        final token = await getUserFcmToken(receiverUid);
-        if (token != null && token.isNotEmpty) {
-          await SendNotificationService.send(
-            notification: PushNotificationModel(
-              token: token,
-              title: senderName,
-              body: text,
-              chatId: chatId!,
-              conversationTitle: senderName,
-              sender: senderName,
-              message: text,
-            ),
-          );
-        }
+      /// UNREAD COUNT
+      final receivers = await getReceiverUids();
+
+      for (final uid in receivers) {
+        if (uid == senderId) continue;
+
+        await _db
+            .child("chatRooms/$chatId/unreadCount/$uid")
+            .runTransaction((value) {
+          final current = (value as int?) ?? 0;
+          return Transaction.success(current + 1);
+        });
       }
+
+      /// PUSH NOTIFICATION
+        await sendNotificationsToReceivers(
+          text: text,
+          senderName: senderName,
+        );
+
     } catch (e, stack) {
-      CrashlyticsService.setKey("chatId", chatId?? "unknown");
+      CrashlyticsService.setKey("chatId", chatId ?? "unknown");
       CrashlyticsService.log("sendMessage failed");
       CrashlyticsService.recordError(e, stack);
+    }
+  }
+// send notification
+  Future<void> sendNotificationsToReceivers({
+    required String text,
+    required String senderName,
+  }) async {
+    final receivers = await getReceiverUids();
+
+    final chatSnap = await _db.child("chatRooms/$chatId").get();
+    final data = Map<String, dynamic>.from(chatSnap.value as Map);
+
+    final isGroup = data["isGroup"] == true;
+    final groupName = data["groupName"] ?? "Group";
+
+    for (final uid in receivers) {
+      final token = await getUserFcmToken(uid);
+
+      if (token != null && token.isNotEmpty) {
+        await SendNotificationService.send(
+          notification: PushNotificationModel(
+            token: token,
+            title: isGroup ? groupName : senderName,
+            body: isGroup ? "$senderName: $text" : text,
+            chatId: chatId!,
+            conversationTitle: isGroup ? groupName : senderName,
+            sender: senderName,
+            message: text,
+          ),
+        );
+      }
     }
   }
 
@@ -308,9 +373,9 @@ class ChatController extends GetxController {
     await ref.set({
       "msgId": msgId,
       "senderId": user.uid,
-      "senderName": userCtrl.currentUserUsername.value, // or fetch from DB
-      "text": message,
-      "time": time,
+      "senderName": userCtrl.currentUserUsername.value,
+      "msgText": message,
+      "timeStamp": time,
       "isDeleted": false,
     });
 
@@ -325,15 +390,57 @@ class ChatController extends GetxController {
       },
     });
     // increment unread for receiver
-    final parts = chatId.split('_');
-    final receiverUid = parts.first == user.uid ? parts.last : parts.first;
+    final db = FirebaseDatabase.instance;
+    final chatSnap = await db.ref("chatRooms/$chatId").get();
 
-    await FirebaseDatabase.instance
-        .ref("chatRooms/$chatId/unreadCount/$receiverUid")
-        .runTransaction((value) {
-          final current = (value as int?) ?? 0;
-          return Transaction.success(current + 1);
-        });
+    if (!chatSnap.exists) return;
+
+    final data = Map<String, dynamic>.from(chatSnap.value as Map);
+
+    List<String> receivers = [];
+
+    if (data["isGroup"] == true) {
+      final participants = Map<String, dynamic>.from(data["participants"]);
+      receivers =
+          participants.keys.where((uid) => uid != user.uid).toList();
+    } else {
+      final parts = chatId.split('_');
+      final receiver =
+      parts.first == user.uid ? parts.last : parts.first;
+      receivers = [receiver];
+    }
+
+    for (final uid in receivers) {
+      await db
+          .ref("chatRooms/$chatId/unreadCount/$uid")
+          .runTransaction((value) {
+        final current = (value as int?) ?? 0;
+        return Transaction.success(current + 1);
+      });
+    }
+    for (final uid in receivers) {
+      final tokenSnap = await db.ref("users/$uid/fcmToken").get();
+
+      if (!tokenSnap.exists) continue;
+
+      final token = tokenSnap.value.toString();
+
+      await SendNotificationService.send(
+        notification: PushNotificationModel(
+          token: token,
+          title: data["isGroup"] == true
+              ? data["groupName"] ?? "Group"
+              : userCtrl.currentUserUsername.value,
+          body: data["isGroup"] == true
+              ? "${userCtrl.currentUserUsername.value}: $message"
+              : message,
+          chatId: chatId,
+          conversationTitle: data["groupName"] ?? "",
+          sender: userCtrl.currentUserUsername.value,
+          message: message,
+        ),
+      );
+    }
   }
 
   // ----------------Group functionality-------------
@@ -362,7 +469,7 @@ class ChatController extends GetxController {
       "lastUpdated": DateTime.now().millisecondsSinceEpoch,
       "participants": participantsMap,
       "members": members.map((e) => e.id).toList(),
-      "lastMsg": {"msgId": "", "text": "", "senderName": "", "time": 0},
+      "lastMsg": {"msgId": "", "msgText": "", "senderName": "", "timeStamp": 0},
     });
     return groupId;
   }
@@ -384,9 +491,11 @@ class ChatController extends GetxController {
         final map = Map<String, dynamic>.from(value);
 
         // only personal chats for now
+        final participants = map["participants"] as Map?;
+
         if (map["isGroup"] == true &&
-            map["participants"] != null &&
-            map["participants"].containsKey(myUid)) {
+            participants != null &&
+            participants.containsKey(myUid)) {
           final unreadMap = map["unreadCount"] as Map? ?? {};
           final unread = unreadMap[myUid] ?? 0;
 
@@ -398,24 +507,43 @@ class ChatController extends GetxController {
 
       list.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
       groups.assignAll(list);
+      _filterGroups();
     });
   }
+///  SEARCH FUNCTIONALITY
+  //-----------filter chats -----------
+  void _filterChats() {
+    final query = searchQuery.value.toLowerCase();
+    final myUid = FirebaseAuth.instance.currentUser!.uid;
 
+    if (query.isEmpty) {
+      filterChats.assignAll(chatRooms);
+    } else {
+      filterChats.assignAll(
+        chatRooms.where((chat) {
+          final name = chat.getOtherUserName(myUid).toLowerCase();
+          return name.contains(query);
+        }).toList(),
+      );
+    }
+  }
   //----------filter Group -----------
   void _filterGroups() {
-    final query = groupSearchQuery.value.toLowerCase();
+    final query = searchQuery.value.toLowerCase();
 
     if (query.isEmpty) {
       filterGroups.assignAll(groups);
     } else {
       filterGroups.assignAll(
-        groups.where((g) => g.groupName.toLowerCase().contains(query)).toList(),
+        groups.where((g) {
+          final name = g.groupName.toLowerCase();
+          return name.contains(query);
+        }).toList(),
       );
     }
   }
-
-  void onGroupSearchChanged(String value) {
-    groupSearchQuery.value = value;
+  void onSearchChanged(String value) {
+    searchQuery.value = value;
   }
 
   //<------------ Badge show with count (no. of meg received) ----------->
@@ -437,8 +565,6 @@ class ChatController extends GetxController {
       groups[index].unreadCount = 0;
       groups.refresh();
     }
-
-    // OPTIONAL: persist in Firebase
     _db.child("chatRooms/$chatId/unreadCount").set(0);
   }
 
@@ -456,16 +582,27 @@ class ChatController extends GetxController {
     return token;
   }
 
-  // in 1-1 reciver chat uid is
 
-  String getReceiverUid() {
-    if (chatId == null) {
-      throw Exception("chatId not initialized");
+  Future<List<String>> getReceiverUids() async {
+    final myUid = FirebaseAuth.instance.currentUser!.uid;
+
+
+    final snapshot = await _db.child("chatRooms/$chatId").get();
+    if (!snapshot.exists) return [];
+
+    final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+    // GROUP CHAT
+    if (data["isGroup"] == true) {
+      final participants = Map<String, dynamic>.from(data["participants"]);
+      return participants.keys.where((uid) => uid != myUid).toList();
     }
 
-    final myUid = FirebaseAuth.instance.currentUser!.uid;
+    // PERSONAL CHAT
     final parts = chatId!.split('_');
-    return parts.first == myUid ? parts.last : parts.first;
+    final receiver = parts.first == myUid ? parts.last : parts.first;
+
+    return [receiver];
   }
 
   // load history msg
@@ -485,6 +622,95 @@ class ChatController extends GetxController {
     allMessages.assignAll(list);
     _filterUiMessages();
   }
+
+/// SEND REQUEST
+  Future<void> sendChatRequest({
+    required String toUid,
+  }) async {
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) return;
+
+    final requestRef = FirebaseDatabase.instance.ref("chatRequests").push();
+
+    await requestRef.set({
+      "requestId": requestRef.key,
+      "fromUid": currentUser.uid,
+      "toUid": toUid,
+      "status": "pending",
+      "createdAt": ServerValue.timestamp,
+    });
+
+    Get.snackbar(
+      "Request Sent",
+      "Chat request sent successfully",
+    );
+  }
+
+
+
+  /// LISTEN CHATS
+  void listenChats() {
+
+    final myUid = FirebaseAuth.instance.currentUser!.uid;
+
+    _chatSub?.cancel();
+
+    _chatSub = _db.child("chatRooms").onValue.listen((event) {
+
+      final data = event.snapshot.value as Map?;
+
+      if (data == null) {
+        chatRooms.clear();
+        return;
+      }
+
+      final List<ChatRoom> list = [];
+
+      data.forEach((key, value) {
+
+        final map = Map<String, dynamic>.from(value);
+
+        if (map["isGroup"] == true) return;
+
+        final participants = map["participants"] as Map?;
+
+        if (participants != null && participants.containsKey(myUid)) {
+
+          final unreadMap = map["unreadCount"] as Map? ?? {};
+          final unread = unreadMap[myUid] ?? 0;
+
+          final room = ChatRoom.fromMap(map);
+          room.unreadCount = unread;
+
+          list.add(room);
+        }
+      });
+
+      list.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+
+      chatRooms.assignAll(list);
+      _filterChats();
+    });
+  }
+// refresh chats
+  Future<void> refreshChats() async {
+    _chatSub?.cancel();
+    _groupSub?.cancel();
+
+    chatRooms.clear();
+    groups.clear();
+    filterChats.clear();
+    filterGroups.clear();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    listenChats();
+    listenGroups();
+  }
+
+
   // ---------------- CLEANUP ----------------
 
   @override
@@ -497,6 +723,7 @@ class ChatController extends GetxController {
     isChatOpen = false;
     _msgSub?.cancel();
     _groupSub?.cancel();
+    _chatSub?.cancel();
     super.onClose();
   }
 }

@@ -207,7 +207,7 @@ class _CallScreenState extends State<CallScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: CircleAvatar(
+       child: CircleAvatar(
         radius: 28,
         backgroundColor: active ? Colors.black : Colors.grey.shade300,
         child: Icon(icon, color: active ? Colors.white : Colors.black),

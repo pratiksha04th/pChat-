@@ -14,6 +14,7 @@ class HumeService {
   WebSocketChannel? _channel;
   final AudioPlayerService _audioPlayer = AudioPlayerService();
 
+
   bool _connecting = false;
   bool _sessionConfigured = false;
 
