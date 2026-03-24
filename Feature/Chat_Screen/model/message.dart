@@ -1,3 +1,8 @@
+enum MessageStatus {
+  sending,
+  sent,
+}
+
 class Message {
   final String msgId;
   final String senderId;
@@ -6,6 +11,8 @@ class Message {
   final int time;
   final bool isDeleted;
 
+  MessageStatus status;
+
   Message({
     required this.msgId,
     required this.senderId,
@@ -13,6 +20,7 @@ class Message {
     required this.text,
     required this.time,
     required this.isDeleted,
+    this.status = MessageStatus.sent,
   });
 
   factory Message.fromMap(String id, Map data) {
@@ -20,9 +28,10 @@ class Message {
       msgId: id,
       senderId: data['senderId'] ?? '',
       senderName: data['senderName'] ?? '',
-      text: data['text'] ?? '',
-      time: data['time'] ?? 0,
+      text: data['msgText'] ?? '',
+      time: data['timeStamp'] ?? 0,
       isDeleted: data['isDeleted'] ?? false,
+      status: MessageStatus.sent,
     );
   }
 }

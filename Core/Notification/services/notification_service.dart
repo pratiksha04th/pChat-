@@ -46,7 +46,8 @@ class NotificationService {
       Get.to(() =>
           ChatScreen(
             chatId: chatId,
-            username: 'Chat',
+            username: "pChat",
+            otherUserId: "",
           ));
     }
     if (replyText.isEmpty || chatId == null) return;

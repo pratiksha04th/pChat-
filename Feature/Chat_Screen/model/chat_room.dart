@@ -17,6 +17,24 @@ class ChatRoom {
     this.unreadCount = 0,
   });
 
+  String getOtherUserName(String myUid) {
+    for (final user in participants) {
+      if (user.id != myUid) {
+        return user.name;
+      }
+    }
+    return "";
+  }
+
+  ChatParticipant? getOtherUser(String myUid) {
+    for (final user in participants) {
+      if (user.id != myUid) {
+        return user;
+      }
+    }
+    return null;
+  }
+
   // Firebase -> Model
   factory ChatRoom.fromMap(Map<dynamic, dynamic> data) {
     final participantsMap = (data['participants'] as Map?) ?? {};
@@ -96,18 +114,18 @@ class LastMessage {
   factory LastMessage.fromMap(Map data) {
     return LastMessage(
       msgId: data['msgId'] ?? '',
-      text: data['text'] ?? '',
+      text: data['msgText'] ?? '',
       senderName: data['senderName'] ?? '',
-      time: data['time'] ?? 0,
+      time: data['timeStamp'] ?? 0,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       "msgId": msgId,
-      "text": text,
+      "msgText": text,
       "senderName": senderName,
-      "time": time,
+      "timeStamp": time,
     };
   }
 }

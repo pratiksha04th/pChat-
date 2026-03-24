@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../Core/Widgets/Text_field/input_decoration.dart';
+import '../../../../Core/routes/app_routes.dart';
 import '../../controller/auth_controlller.dart';
 import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
-import '../SignIn/SignIn.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -16,192 +16,318 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final AuthController authController = Get.put(AuthController());
+  final AuthController authController = Get.find<AuthController>();
 
   // used to validate the form
   final _formkey = GlobalKey<FormState>();
-
-  //<------- SIGNUP FUNCTION ------->
 
   //<---  UI ----->
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.splashBgColor,
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formkey,
-          child: Column(
-            children: [
-              SizedBox(height: 150),
-              Container(
-                alignment: Alignment.center,
-                height: 100,
-                width: 100,
-                child: Image.asset(AppImages.logo),
-              ),
-              Text(
-                'Welcome',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'Please Sign Up to continue',
-                style: TextStyle(color: Colors.grey),
-              ),
-              SizedBox(height: 30),
-              //<--- TEXT Form FIELD email ----->
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: TextFormField(
-                  controller: authController.emailController, // controller
-                  validator: authController.validateEmail, // validator
-                  decoration: AppInputDecoration.build(
-                    // decoration from    ---   Widget/textField/input_decoration.dart
-                    hint: 'example@gmail.com',
-                    label: 'Email',
-                    icon: Icons.email,
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              //<--- TEXT Form FIELD username ----->
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: TextFormField(
-                  controller: authController.usernameController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Username is required";
-                    }
-                    return null;
-                  },
-                  decoration: AppInputDecoration.build(
-                    label: "Username",
-                    hint: "username",
-                    icon: Icons.person_outline,
-                  ),
-                ),
-              ),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          /// BACKGROUND IMAGE
+          Positioned.fill(
+            child: Image.asset(AppImages.backgroundImage, fit: BoxFit.cover),
+          ),
 
-              SizedBox(height: 10),
-              //<--- TEXT Form FIELD password ----->
-              Obx(
-                () => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextFormField(
-                    controller: authController.passwordController, // controller
-                    validator: authController.validatePassword, // validator
-                    keyboardType: TextInputType.visiblePassword,
-                    obscureText: authController.obscurePassword.value,
-                    onChanged: authController.checkPasswordStrength,
-                    decoration: AppInputDecoration.build(
-                      // decoration from    ---   Widget/textField/input_decoration.dart
-                      hint: '******',
-                      label: 'Password',
-                      icon: Icons.lock_outline,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          authController.obscurePassword.value
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
-                        ),
-                        onPressed: () =>
-                            authController.obscurePassword.toggle(),
+          /// MAIN CONTENT
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Form(
+                      key: _formkey,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 50),
+
+                          // Logo
+                          Container(
+                            height: 80,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Transform.scale(
+                              scale: 1.7,
+                              child: Image.asset(
+                                AppImages.logo,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          const Text(
+                            "Create Account",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          const Text(
+                            "Join us to get started",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          // CARD CONTAINER
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.15),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  /// EMAIL
+                                  TextFormField(
+                                    controller: authController.emailController,
+                                    validator: authController.validateEmail,
+                                    decoration: AppInputDecoration.build(
+                                      hint: 'example@gmail.com',
+                                      label: 'Email',
+                                      icon: Icons.email_outlined,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 15),
+
+                                  /// USERNAME
+                                  TextFormField(
+                                    controller:
+                                        authController.usernameController,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return "Username is required";
+                                      }
+                                      return null;
+                                    },
+                                    decoration: AppInputDecoration.build(
+                                      label: "Username",
+                                      hint: "username",
+                                      icon: Icons.person_outline,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 15),
+
+                                  /// PASSWORD
+                                  /// PASSWORD
+                                  Obx(
+                                    () => TextFormField(
+                                      controller:
+                                          authController.passwordController,
+                                      validator:
+                                          authController.validatePassword,
+                                      obscureText:
+                                          authController.obscurePassword.value,
+                                      onChanged:
+                                          authController.checkPasswordStrength,
+                                      decoration: AppInputDecoration.build(
+                                        hint: '******',
+                                        label: 'Password',
+                                        icon: Icons.lock_outline,
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            authController.obscurePassword.value
+                                                ? Icons.visibility_off
+                                                : Icons.visibility,
+                                          ),
+                                          onPressed: () => authController
+                                              .obscurePassword
+                                              .toggle(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  /// PASSWORD STRENGTH BAR
+                                  Obx(() {
+                                    if (!authController
+                                        .isPasswordTyping
+                                        .value) {
+                                      return const SizedBox();
+                                    }
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: _buildSegmentedStrengthBar(
+                                        authController.passwordScore,
+                                        authController.passwordLabel,
+                                      ),
+                                    );
+                                  }),
+
+                                  /// PASSWORD REQUIREMENTS
+                                  Obx(() {
+                                    if (!authController
+                                        .isPasswordTyping
+                                        .value) {
+                                      return const SizedBox();
+                                    }
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 6,
+                                        children: [
+                                          _buildRequirement(
+                                            "1 special character",
+                                            authController.hasSpecialChar.value,
+                                          ),
+                                          _buildRequirement(
+                                            "1 number",
+                                            authController.hasNumber.value,
+                                          ),
+                                          _buildRequirement(
+                                            "6+ characters",
+                                            authController.hasMinLength.value,
+                                          ),
+                                          _buildRequirement(
+                                            "1 capital letter",
+                                            authController.hasUppercase.value,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+
+                                  const SizedBox(height: 20),
+
+                                  /// TERMS CHECKBOX
+                                  Row(
+                                    children: [
+                                      Checkbox(value: true, onChanged: (v) {}),
+                                      const Expanded(
+                                        child: Text(
+                                          "I agree to Terms & Privacy Policy",
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  /// CREATE ACCOUNT BUTTON
+                                  SizedBox(
+                                      width: double.infinity,
+                                      height: 55,
+                                      child: ElevatedButton(
+                                        onPressed: () => authController.isLoading.value
+                                          ? null
+                                            : authController.signUp(_formkey),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.themeColor,
+                                          elevation: 6,
+                                          shadowColor: AppColors.themeColor
+                                              .withOpacity(0.4),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Obx(
+                                          () => authController.isLoading.value
+                                              ? const CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                )
+                                              : const Text(
+                                                  "Create Account",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+
+                                  /// ---------- or ----------
+                                  const SizedBox(height: 15),
+
+                                  Row(
+                                    children: [
+                                      Expanded(child: Divider()),
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                        child: Text("or"),
+                                      ),
+                                      Expanded(child: Divider()),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 15),
+
+                                  /// SIGN IN TEXT
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text("Already have an account? "),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Get.offAllNamed(AppRoutes.signin);
+                                        },
+                                        child: Text(
+                                          "Sign In",
+                                          style: TextStyle(
+                                            color: AppColors.themeColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+                        ],
                       ),
                     ),
                   ),
-                ),
-              ),
-              Obx(() {
-                if (!authController.isPasswordTyping.value) {
-                  return const SizedBox();
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 6,
-                  ),
-                  child: _buildSegmentedStrengthBar(
-                    authController.passwordScore,
-                    authController.passwordLabel,
-                  ),
                 );
-              }),
-
-              //<--- requirements for strong password ----->
-              Obx(() {
-                if (!authController.isPasswordTyping.value) {
-                  return const SizedBox();
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      _buildRequirement(
-                        "1 special character",
-                        authController.hasSpecialChar.value,
-                      ),
-                      _buildRequirement(
-                        "1 number",
-                        authController.hasNumber.value,
-                      ),
-                      _buildRequirement(
-                        "6+ characters",
-                        authController.hasMinLength.value,
-                      ),
-                      _buildRequirement(
-                        "1 capital letter",
-                        authController.hasUppercase.value,
-                      ),
-                    ],
-                  ),
-                );
-              }),
-
-              SizedBox(height: 40),
-              //<----- if already have an account, please sign in ----->
-              InkWell(
-                onTap: () {
-                  Get.offAll(() => const SignInScreen());
-                },
-                child: Text("if already have an account, please sign in",
-                  style: TextStyle(
-                    color: AppColors.redColor,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                    decorationColor: AppColors.redColor,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 20),
-
-              //<---- SIGNUP BUTTON ----->
-              ElevatedButton(
-                onPressed: () => authController.signUp(_formkey),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.themeColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Obx(
-                  () => authController.isLoading.value
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          "Create Account",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                ),
-              ),
-            ],
+              },
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

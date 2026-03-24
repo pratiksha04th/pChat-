@@ -1,13 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pchat/Feature/Auth/view/SignIn/SignIn.dart';
-import 'package:pchat/Feature/Home/view/home_screen.dart';
-import '../../../Core/SharedPreferences/session_manager.dart';
-import '../../../Core/Notification/controller/firebase_messaging_service.dart';
-import '../../../Core/Notification/services/get_server_key.dart';
-import '../../../Core/Notification/services/notification_service.dart';
-import '../../../utilities/App_Colors/App_Colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../../../Core/routes/app_routes.dart';
 import '../../../utilities/App_Images/App_Images.dart';
+import '../controller/appController.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,40 +16,52 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
-  late GetServerKey getServerKey;
-    @override
+  @override
   void initState() {
     super.initState();
-    NotificationService.init();
-    FirebaseMessagingService.init();
-    getToken();
-    _checkLogin();
+    startApp();
   }
-  Future <void> getToken() async{
-      getServerKey =  GetServerKey();
-      final token = await getServerKey.getServerKeyToken();
-      print("ACCESS TOKEN : ${token}");
-}
-  Future<void> _checkLogin() async {
-    final loggedIn = await SessionManager.isLoggedIn();
-    await Future.delayed(const Duration(seconds: 3));
-    if (loggedIn) {
-      Get.offAll(() => HomeScreen(), duration: const Duration(seconds: 1),
-    transition: Transition.fade);
-  }else {
-      Get.off(() => const SignInScreen(),
-          duration: const Duration(seconds: 1),
-          transition: Transition.fade);
-    }
+
+  void startApp() async {
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    final appController =  Get.find<AppController>();
+    appController.handleAppStart();
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      backgroundColor: AppColors.splashBgColor1,
-      body: Center(
-        child: Image.asset(AppImages.splashScreenImage)
-      )
+      body: Stack(
+        children: [
+
+          /// BACKGROUND
+          Positioned.fill(
+            child: Image.asset(
+              AppImages.backgroundImage,
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          /// CENTER LOGO
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+
+                Image.asset(
+                  AppImages.logo,
+                  height: 280,
+                ),
+
+
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 }

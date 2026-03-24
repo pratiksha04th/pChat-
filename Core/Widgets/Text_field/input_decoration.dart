@@ -9,13 +9,19 @@ class AppInputDecoration {
     Widget? suffixIcon,
   }) {
     return InputDecoration(
-      prefixIcon: Icon(icon),
+      prefixIcon: Icon(
+        icon,
+        color: Colors.grey.shade700,
+      ),
       suffixIcon: suffixIcon,
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey),
+      hintStyle: TextStyle(
+          color: Colors.grey.shade500,
+      fontSize: 14,
+      ),
       labelText: label,
       labelStyle: TextStyle(
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
         color: AppColors.themeColor,
       ),
       filled: true,
@@ -23,19 +29,19 @@ class AppInputDecoration {
       contentPadding:
       const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(
           color: AppColors.themeColor,
-          width: 1.5,
+          width: 1,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red),
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Colors.red, width :1),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

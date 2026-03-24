@@ -1,255 +1,319 @@
 import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+
+import '../../../Core/Widgets/bubble_style.dart';
+import '../../../Core/services/connectivity_service.dart';
+import '../../../utilities/App_Images/App_Images.dart';
+import '../../Home/controller/userController/all_users_controller.dart';
 import '../controller/chat_controller.dart';
 import '../../../utilities/App_Colors/App_Colors.dart';
+import '../model/message.dart';
 
 class ChatScreen extends StatefulWidget {
   final String username;
   final String chatId;
+  final String otherUserId;
 
-  ChatScreen({super.key,
-    required this.username,
-    required this.chatId
-  });
+
+  const ChatScreen({super.key, required this.username, required this.chatId, required this.otherUserId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final ChatController chatController = Get.find<ChatController>();
+  final AllUsersController usersController = Get.find();
+  final ChatController chatController = Get.find();
   final TextEditingController messageController = TextEditingController();
+  final currentUser = FirebaseAuth.instance.currentUser;
+  final connectivity = Get.find<ConnectivityService>();
+
   @override
   void initState() {
     super.initState();
+
+    FirebaseCrashlytics.instance.log("ChatScreen opened: ${widget.chatId}");
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      chatController.initChat(widget.chatId);
+      try {
+        chatController.initChat(widget.chatId);
+      } catch (e, stack) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          stack,
+          reason: "initChat failed",
+        );
+      }
     });
   }
+
   @override
-  void dispose(){
+  void dispose() {
     chatController.isChatOpen = false;
     messageController.dispose();
     super.dispose();
   }
+/// FORMAT DATE AND TIME
+  String formatDateTime(int timestamp) {
+    final now = DateTime.now();
+    final time = DateTime.fromMillisecondsSinceEpoch(timestamp);
 
-  String formatTime(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final amPm = time.hour >= 12 ? "PM" : "AM";
 
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final minute = date.minute.toString().padLeft(2, '0');
-    final amPm = date.hour >= 12 ? "PM" : "AM";
+    final isToday =
+        now.year == time.year &&
+            now.month == time.month &&
+            now.day == time.day;
 
-    return "$hour:$minute $amPm";
+    final isYesterday =
+        now.subtract(const Duration(days: 1)).year == time.year &&
+            now.subtract(const Duration(days: 1)).month == time.month &&
+            now.subtract(const Duration(days: 1)).day == time.day;
+
+    if (isToday) {
+      return "$hour:$minute $amPm";
+    } else if (isYesterday) {
+      return "Yesterday, $hour:$minute $amPm";
+    } else {
+      return "${time.day}/${time.month}/${time.year}, $hour:$minute $amPm";
+    }
+  }
+
+  /// FORMAT LAST SEEN
+  String _formatLastSeen(int timestamp) {
+    final time = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final now = DateTime.now();
+
+    final diff = now.difference(time);
+
+    if (diff.inMinutes < 1) return "just now";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} min ago";
+    if (diff.inHours < 24) return "${diff.inHours} hrs ago";
+
+    return "${time.day}/${time.month}/${time.year}";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
-      // ---------------- APP BAR ----------------
+      extendBodyBehindAppBar: true,
+
+      /// APP BAR
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Obx(() {
-          final selecting = chatController.selectionMode.value;
-          final count = chatController.selectedMsgIds.length;
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.5),
 
-          return AppBar(
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            leading:
-            IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, color: AppColors.themeColor),
-              onPressed: () {
-                if (selecting) {
-                  chatController.clearSelection();
-                } else {
-                  Get.back();
-                }
-              },
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
 
-            title: selecting
-                ? Text(
-                    "$count selected",
-                    style: TextStyle(color: Colors.black),
-                  )
-                : Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        child: Text(
-                          widget.username[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.themeColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Column(
-                        children: [
-                          Text(
-                            widget.username,
-                            style: TextStyle(          
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text("Online", style: TextStyle(color: Colors.grey, fontSize: 10)),
-                        ],
-                      ),
-                    ],
-                  ),
-
-            actions: selecting
-                ? [
-                    IconButton(
-                      icon: Icon(Icons.delete, color: AppColors.themeColor),
-                      onPressed: () {
-                        _showDeleteDialog(context);
-                      },
-                    ),
-                  ]
-                : [],
-          );
-        }),
-      ),
-
-      // ---------------- BODY ----------------
-      body: Container(
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          color: AppColors.splashBgColor,
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Obx(() {
-                final message = chatController.uiMessages;
-                if(message.isEmpty){
-                  return const Center(
-                    child: Text("No messages yet"),
-                  );
-                }
-                return ListView.builder(
-                  reverse: true,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: chatController.uiMessages.length,
-                  itemBuilder: (context, index) {
-                    final msg = chatController.uiMessages[index];
-
-                    final isMe =
-                        msg.senderId == FirebaseAuth.instance.currentUser!.uid;
-                    final time = formatTime(msg.time);
-                    return GestureDetector(
-                      key: ValueKey(msg.msgId), // value key is used to identify the unique message
-                      onLongPress: () {
-                        chatController.startSelection(msg.msgId);
-                      },
-                      onTap: () {
-                        if (chatController.selectionMode.value) {
-                          chatController.toggleSelection(msg.msgId);
-                        }
-                      },
-                      child: Obx(() {
-                        final selected = chatController.selectedMsgIds.contains(
-                          msg.msgId,
-                        );
-                        final bubble = isMe
-                            ? _senderBubble(msg.text, time)
-                            : _receiverBubble(msg.text, time);
-
-                        return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          color: selected
-                              ? Colors.blue.withOpacity(0.2)
-                              : Colors.transparent,
-                          child: bubble,
-                        );
-                      }),
-                    );
-                  },
-                );
-              }),
-            ),
-
-            _chatInput(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ---------------- RECEIVER BUBBLE ----------------
-  Widget _receiverBubble(String text, String time) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child:Column(
-        children: [
-          Text(
-            time,
-            style: const TextStyle(color: Colors.black, fontSize: 12),
+            border: Border.all(color: Colors.white.withOpacity(0.6), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            constraints: const BoxConstraints(maxWidth: 280),
-            decoration: BoxDecoration(
-              color: AppColors.themeColor.withOpacity(0.1),
+          child: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.white.withOpacity(0.5),
+
+            shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
             ),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, color: AppColors.themeColor),
+              onPressed: () => Get.back(),
+            ),
+
+            titleSpacing: 0,
+            title: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.themeColor.withOpacity(0.15),
+                  child: Text(
+                    widget.username[0].toUpperCase(),
+                    style: TextStyle(
+                      color: AppColors.themeColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.username,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Obx(() {
+                      final user = usersController.users.firstWhereOrNull(
+                            (u) => u.uid == widget.otherUserId,
+                      );
+
+                      if (user == null) return SizedBox();
+
+                      if (user.isOnline) {
+                        return const Text(
+                          "Online",
+                          style: TextStyle(color: Colors.green, fontSize: 12),
+                        );
+                      }
+
+                      return Text(
+                        "Last seen ${_formatLastSeen(user.lastSeen)}",
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      );
+                    })
+                  ],
+                ),
+              ],
+            ),
+
+            actions: [
+              Icon(Icons.more_vert, color: AppColors.themeColor),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+      ),
+
+      /// BODY
+      body: Stack(
+        children: [
+          /// BACKGROUND IMAGE
+          Positioned.fill(
+            child: Image.asset(AppImages.backgroundImage, fit: BoxFit.cover),
+          ),
+
+          /// CONTENT
+          SafeArea(
             child: Column(
               children: [
-                Text(text, style: const TextStyle(fontSize: 14)),
-                ],
+                Expanded(child: _messagesList()),
+                _chatInput(),
+              ],
             ),
           ),
         ],
       ),
     );
   }
-
-  // ---------------- SENDER BUBBLE ----------------
-  Widget _senderBubble(String text, String time) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Column(
+  /// RECEIVER MESSAGE
+  Widget _receiverBubble(String text, String time) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
-            time,
-            style: const TextStyle(color: Colors.black, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            constraints: const BoxConstraints(maxWidth: 280),
-            decoration: BoxDecoration(
-              color: AppColors.themeColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.transparent,
+            child:Container(
+              decoration: BoxDecoration(
+                border: Border.all(width: 1.2, color:Colors.white),
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.themeColor,
+                    AppColors.themeColor.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+            ),
+            child: Center(
+              child: Text(
+                widget.username[0].toUpperCase(),
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
+          ),
+          ),
+
+          const SizedBox(width: 4),
+
+          Flexible(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  text,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ClipPath(
+                  clipper: ChatBubbleClipper(isMe: false),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.95),
+                          Colors.blue.shade50.withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(text, softWrap: true),
+
+                        const SizedBox(height: 4),
+
+                        /// TIME
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              time,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Icon(Icons.copy_rounded, size: 18, color: Colors.grey),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.thumb_up_alt_rounded,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -259,102 +323,240 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // ---------------- INPUT BAR ----------------
-  Widget _chatInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      color: Colors.blue.withOpacity(0.08),
+
+  /// SENDER MESSAGE
+  Widget _senderBubble(String text, String time, MessageStatus status) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          //--messageBox --
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.splashBgColor,
-                borderRadius: const BorderRadius.all(Radius.circular(30)),
-              ),
-              child: Row(
-                children: [
-                  IconButton(icon: const Icon(Icons.attach_file), onPressed: () {}),
-                  Expanded(
-                    child: TextField(
-                      controller: messageController,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: "Type a message...",
-                        border: InputBorder.none,
-                        isDense: true,
-                      ),
+          Flexible(
+            child: ClipPath(
+              clipper: ChatBubbleClipper(isMe: true),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.themeColor,
+                      AppColors.themeColor.withOpacity(0.7),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    /// MESSAGE TEXT
+                    Text(text, style: const TextStyle(color: Colors.white)),
+
+                    const SizedBox(height: 4),
+
+                    /// TIME + STATUS
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          time,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        /// STATUS ICON
+                        Icon(
+                          status == MessageStatus.sending
+                              ? Icons.access_time_rounded
+                              : Icons.check_rounded,
+                          size: 14,
+                          color: Colors.white70,
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.send, color: AppColors.themeColor),
-                    onPressed: () async {
-                      final text = messageController.text.trim();
-                      if (text.isEmpty) return;
-
-                      EasyLoading.show();
-
-                      try {
-                        await chatController.sendMessage(text); // ONLY THIS
-                        messageController.clear();
-                      } catch (e) {
-                        print("Send message error: $e");
-                      } finally {
-                        EasyLoading.dismiss();
-                      }
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            height: 45,
-            width: 45,
-            decoration:BoxDecoration(
-              color: AppColors.themeColor,
-              borderRadius: BorderRadius.circular(20)
+
+          const SizedBox(width: 6),
+
+          /// AVATAR
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(width: 0.5, color:AppColors.themeColor),
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.95),
+                    Colors.blue.shade50.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  usersController.currentUserUsername.value.isNotEmpty
+                      ? usersController.currentUserUsername.value[0].toUpperCase()
+                      : "U",
+                  style: TextStyle(
+                    color: AppColors.themeColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.mic, color: Colors.white),
-              onPressed: () {},
-            ),
-          )
+          ),
         ],
       ),
     );
   }
-  //-------- DELETE MSG -----------
 
+  /// INPUT BAR
+  Widget _chatInput() {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(30),
+      ),
+
+      child: Row(
+        children: [
+          const Icon(Icons.add, color: Colors.grey),
+
+          const SizedBox(width: 6),
+
+          Expanded(
+            child: TextField(
+              controller: messageController,
+              decoration: const InputDecoration(
+                hintText: "Type your message...",
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.themeColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white, size: 18),
+              onPressed: () async {
+                final text = messageController.text.trim();
+                if (text.isEmpty) return;
+
+                messageController.clear();
+                try {
+                  await chatController.sendMessage(text);
+                  messageController.clear();
+
+                  FirebaseCrashlytics.instance.log("Message sent: $text");
+                } catch (e, stack) {
+                  FirebaseCrashlytics.instance.recordError(
+                    e,
+                    stack,
+                    reason: "sendMessage UI failed",
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// DELETE DIALOG
   void _showDeleteDialog(BuildContext context) {
     Get.dialog(
       AlertDialog(
         title: const Text("Delete Message"),
         content: const Text("Do you want to delete this message ?"),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        actions: [
-          // Cancel
-          TextButton(
-            onPressed: () {
-              Get.back();
-            },
-            child: const Text("Cancel"),
-          ),
 
-          // Delete
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
+
           TextButton(
             onPressed: () async {
               await chatController.deleteSelectedMsg();
-              Get.back(); // close dialog
+              Get.back();
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+  }
+
+  Widget _messagesList() {
+    return Obx(() {
+      try {
+        final messages = chatController.uiMessages;
+
+        if (messages.isEmpty) {
+          return const Center(child: Text("No messages yet"));
+        }
+
+        return ListView.builder(
+          reverse: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            final msg = messages[index];
+
+            final isMe = msg.senderId == FirebaseAuth.instance.currentUser!.uid;
+
+            final time = formatDateTime(msg.time);
+
+            final selected = chatController.selectedMsgIds.contains(msg.msgId);
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              color: selected
+                  ? AppColors.themeColor.withOpacity(0.12)
+                  : Colors.transparent,
+              child: isMe
+                  ? _senderBubble(msg.text, time, msg.status)
+                  : _receiverBubble(msg.text, time),
+            );
+          },
+        );
+      } catch (e, stack) {
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          stack,
+          reason: "Message list rendering failed",
+        );
+
+        return const Center(child: Text("Something went wrong"));
+      }
+    });
+  }
+
+  String getOtherUserUid() {
+    final myUid = FirebaseAuth.instance.currentUser!.uid;
+    final parts = widget.chatId.split('_');
+    return parts.first == myUid ? parts.last : parts.first;
   }
 }
