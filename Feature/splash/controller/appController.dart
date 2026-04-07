@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:get/get.dart';
 
 import '../../../Core/routes/app_routes.dart';
+import '../../location/services/location_service.dart';
 
 class AppController extends GetxController with WidgetsBindingObserver {
 
@@ -16,9 +17,6 @@ class AppController extends GetxController with WidgetsBindingObserver {
 
     /// Listen app Lifecycle
     WidgetsBinding.instance.addObserver(this);
-
-    /// set user online when app starts
-    setUserOnline(true);
 
     /// set user disconnect handler
     setupDisconnect();
@@ -116,6 +114,13 @@ class AppController extends GetxController with WidgetsBindingObserver {
 
       /// SUCCESS -> MAIN SCREEN
       FirebaseCrashlytics.instance.log("User entered main screen");
+
+      /// get ive location
+      Future.delayed(const Duration(seconds: 1), () {
+        Get.find<LocationService>().startLiveTracking();
+      });
+
+
       Get.offAllNamed(AppRoutes.mainScreen);
     } catch (e, stack) {
       FirebaseCrashlytics.instance.recordError(

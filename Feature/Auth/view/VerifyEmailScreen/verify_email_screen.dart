@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
+import '../../../../utilities/App_Strings/app_strings.dart';
 import '../../controller/auth_controlller.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -16,11 +17,17 @@ class VerifyEmailScreen extends StatefulWidget {
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Timer? timer;
+  late String email;
+  final TextEditingController editEmailController = TextEditingController();
+  bool isEditing = false;
 
   @override
   void initState() {
     super.initState();
 
+    email = Get.arguments ?? FirebaseAuth.instance.currentUser?.email ?? "";
+
+    editEmailController.text = email;
     timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       final user = FirebaseAuth.instance.currentUser;
       await user?.reload();
@@ -38,6 +45,94 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   void dispose() {
     timer?.cancel();
     super.dispose();
+  }
+
+  /// re_authenticate email
+  Future<void> reAuthenticateUser(String password) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final cred = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+
+    await user.reauthenticateWithCredential(cred);
+  }
+
+  /// email update or edit
+  Future<void> updateEmail() async {
+    final newEmail = editEmailController.text.trim();
+
+    if (newEmail.isEmpty || !GetUtils.isEmail(newEmail)) {
+      Get.snackbar(
+        AppStrings.invalidEmail,
+        AppStrings.enterValidEmail,
+        backgroundColor: Colors.red.shade100,
+      );
+      return;
+    }
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) return;
+
+      await user.verifyBeforeUpdateEmail(newEmail);
+
+      setState(() {
+        email = newEmail;
+        isEditing = false;
+      });
+
+      Get.snackbar(
+        "Verification Sent",
+        "Check your new email to verify",
+        backgroundColor: Colors.green.shade100,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "requires-recent-login") {
+        /// SHOW PASSWORD DIALOG
+        final password = await _showPasswordDialog();
+
+        if (password == null) return;
+
+        try {
+          await reAuthenticateUser(password);
+
+          /// TRY AGAIN AFTER RE-AUTH
+          await FirebaseAuth.instance.currentUser!.verifyBeforeUpdateEmail(
+            newEmail,
+          );
+
+          setState(() {
+            email = newEmail;
+            isEditing = false;
+          });
+
+          Get.snackbar(
+            "Verification Sent",
+            "Check your new email",
+            backgroundColor: Colors.green.shade100,
+          );
+        } catch (e) {
+          Get.snackbar(
+            AppStrings.error,
+            "Re-authentication failed",
+            backgroundColor: Colors.red.shade100,
+          );
+        }
+
+        return;
+      }
+
+      Get.snackbar(
+        AppStrings.error,
+        "Failed to update email",
+        backgroundColor: Colors.red.shade100,
+      );
+    }
   }
 
   @override
@@ -83,7 +178,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     const SizedBox(height: 25),
 
                     const Text(
-                      "Verify Email",
+                      AppStrings.verifyEmailTitle,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -93,7 +188,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     const SizedBox(height: 5),
 
                     const Text(
-                      "Please verify your email to continue",
+                      AppStrings.verifyEmailSubtitle,
                       style: TextStyle(color: Colors.grey),
                     ),
 
@@ -124,20 +219,89 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                           const SizedBox(height: 20),
 
-                          const Text(
-                            "Verification email sent.\nPlease check your inbox.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16),
-                          ),
+                          if (!isEditing) ...[
+                            Text(
+                              "We've sent a verification link to",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            Text(
+                              email,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.themeColor,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  isEditing = true;
+                                  editEmailController.text = email;
+                                });
+                              },
+                              child: const Text(AppStrings.editEmail),
+                            ),
+                          ],
+                          if (isEditing) ...[
+                            TextField(
+                              controller: editEmailController,
+                              decoration: InputDecoration(
+                                hintText: "Enter new email",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Row(
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      isEditing = false;
+                                    });
+                                  },
+                                  child: const Text(AppStrings.cancel),
+                                ),
+
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.themeColor,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    print(AppStrings.updateEmail);
+                                    updateEmail();
+                                  },
+                                  child: const Text(AppStrings.update),
+                                ),
+                              ],
+                            ),
+                          ],
+
+                          if (!isEditing)
+                            const Text(
+                              "Please check your inbox and verify your email to continue.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
 
                           const SizedBox(height: 25),
 
-                          const CircularProgressIndicator(),
-
-                          const SizedBox(height: 15),
-
                           const Text(
-                            "Waiting for email verification...",
+                            AppStrings.waitingVerification,
                             style: TextStyle(color: Colors.grey, fontSize: 13),
                           ),
 
@@ -151,8 +315,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                                 if (user == null) {
                                   Get.snackbar(
-                                    "Error",
-                                    "User not found",
+                                    AppStrings.error,
+                                    AppStrings.userNotFound,
                                     backgroundColor: Colors.red.shade100,
                                   );
                                   return;
@@ -162,37 +326,36 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                                 /// SUCCESS SNACKBAR
                                 Get.snackbar(
-                                  "Email Sent",
-                                  "Verification email has been sent successfully",
+                                  AppStrings.emailSent,
+                                  AppStrings.emailSentSuccess,
                                   snackPosition: SnackPosition.BOTTOM,
                                   backgroundColor: Colors.green.shade100,
                                 );
                               } on FirebaseAuthException catch (e) {
                                 /// ERROR SNACKBAR
-                                String message = "Failed to send email";
+                                String message = AppStrings.failedToSendEmail;
 
                                 if (e.code == "too-many-requests") {
-                                  message =
-                                      "Too many requests. Please wait and try again.";
+                                  message = AppStrings.tooManyRequests;
                                 }
 
                                 Get.snackbar(
-                                  "Error",
+                                  AppStrings.error,
                                   message,
                                   snackPosition: SnackPosition.BOTTOM,
                                   backgroundColor: Colors.red.shade100,
                                 );
                               } catch (e) {
                                 Get.snackbar(
-                                  "Error",
-                                  "Something went wrong",
+                                  AppStrings.error,
+                                  AppStrings.somethingWentWrong,
                                   snackPosition: SnackPosition.BOTTOM,
                                   backgroundColor: Colors.red.shade100,
                                 );
                               }
                             },
                             child: Text(
-                              "Resend Email",
+                              AppStrings.resendEmail,
                               style: TextStyle(
                                 color: AppColors.themeColor,
                                 fontWeight: FontWeight.bold,
@@ -212,5 +375,41 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         ],
       ),
     );
+  }
+
+  Future<String?> _showPasswordDialog() async {
+    TextEditingController passwordController = TextEditingController();
+
+    String? result;
+
+    await Get.dialog(
+      AlertDialog(
+        title: const Text(AppStrings.reAuth),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(AppStrings.enterPassword),
+            const SizedBox(height: 10),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: AppStrings.password),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text(AppStrings.cancel)),
+          ElevatedButton(
+            onPressed: () {
+              result = passwordController.text.trim();
+              Get.back();
+            },
+            child: const Text(AppStrings.confirm),
+          ),
+        ],
+      ),
+    );
+
+    return result;
   }
 }

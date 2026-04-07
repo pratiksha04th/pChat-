@@ -124,6 +124,8 @@ class AuthController extends GetxController {
         lastUpdated: DateTime.now().millisecondsSinceEpoch,
         isOnline: true,
         lastSeen: DateTime.now().millisecondsSinceEpoch,
+        lat: 0.0,
+        lng: 0.0,
       );
 
       await _dbRef.child(user.uid).set(newUser.toMap());
@@ -136,10 +138,14 @@ class AuthController extends GetxController {
         color: Colors.green.shade100,
       );
 
+      final email = emailController.text.trim();
+
       clearAuthFields();
 
-      Get.offAllNamed(AppRoutes.verifyEmail,
-          arguments: emailController.text.trim());
+      Get.offAllNamed(
+        AppRoutes.verifyEmail,
+        arguments: email,
+      );
 
     } on FirebaseAuthException catch (e) {
       _handleAuthError(e);
@@ -295,6 +301,7 @@ class AuthController extends GetxController {
       Get.offAllNamed(AppRoutes.createProfile);
     }
   }
+
 
   /// ---------------- ERROR HANDLER ----------------
   void _handleAuthError(FirebaseAuthException e) {

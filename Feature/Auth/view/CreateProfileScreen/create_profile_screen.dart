@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
 import '../../../../Core/Widgets/Text_field/input_decoration.dart';
+import '../../../../utilities/App_Strings/app_strings.dart';
 import '../../controller/auth_controlller.dart';
 
 class CreateProfileScreen extends StatelessWidget {
@@ -79,7 +80,7 @@ class CreateProfileScreen extends StatelessWidget {
                             const SizedBox(height: 20),
 
                             const Text(
-                              "Complete Profile",
+                              AppStrings.completeProfile,
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
@@ -89,7 +90,7 @@ class CreateProfileScreen extends StatelessWidget {
                             const SizedBox(height: 5),
 
                             const Text(
-                              "Complete your profile to continue",
+                              AppStrings.completeProfileSubtitle,
                               style: TextStyle(color: Colors.grey),
                             ),
 
@@ -115,13 +116,13 @@ class CreateProfileScreen extends StatelessWidget {
                                       controller: controller.firstNameController,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return "First name required";
+                                          return AppStrings.firstNameRequired;
                                         }
                                         return null;
                                       },
                                       decoration: AppInputDecoration.build(
-                                        hint: "Pratiksha",
-                                        label: "First Name",
+                                        hint: AppStrings.hintFirstName,
+                                        label: AppStrings.firstName,
                                         icon: Icons.person_outline,
                                       ),
                                     ),
@@ -133,13 +134,13 @@ class CreateProfileScreen extends StatelessWidget {
                                       controller: controller.lastNameController,
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
-                                          return "Last name required";
+                                          return AppStrings.lastNameRequired;
                                         }
                                         return null;
                                       },
                                       decoration: AppInputDecoration.build(
-                                        hint: "Thakur",
-                                        label: "Last Name",
+                                        hint: AppStrings.hintLastName,
+                                        label: AppStrings.lastName,
                                         icon: Icons.person_outline,
                                       ),
                                     ),
@@ -152,8 +153,8 @@ class CreateProfileScreen extends StatelessWidget {
                                       readOnly: true,
                                       onTap: () => controller.pickDOB(context),
                                       decoration: AppInputDecoration.build(
-                                        hint: "Select date",
-                                        label: "Date of Birth",
+                                        hint: AppStrings.selectDate,
+                                        label: AppStrings.dateOfBirth,
                                         icon: Icons.calendar_today,
                                       ),
                                     ),
@@ -169,24 +170,24 @@ class CreateProfileScreen extends StatelessWidget {
 
                                       validator: (value) =>
                                       value == null
-                                          ? "Gender required"
+                                          ? AppStrings.genderRequired
                                           : null,
 
                                       items: const [
 
                                         DropdownMenuItem(
-                                          value: "Male",
-                                          child: Text("Male"),
+                                          value: AppStrings.male,
+                                          child: Text(AppStrings.male),
                                         ),
 
                                         DropdownMenuItem(
-                                          value: "Female",
-                                          child: Text("Female"),
+                                          value: AppStrings.female,
+                                          child: Text(AppStrings.female),
                                         ),
 
                                         DropdownMenuItem(
-                                          value: "Other",
-                                          child: Text("Other"),
+                                          value: AppStrings.other,
+                                          child: Text(AppStrings.other),
                                         ),
 
                                       ],
@@ -196,7 +197,7 @@ class CreateProfileScreen extends StatelessWidget {
                                       },
 
                                       decoration: AppInputDecoration.build(
-                                        hint: "Select gender",
+                                        hint: AppStrings.selectGender,
                                         label: "",
                                         icon: Icons.people_outline,
                                       ),
@@ -232,7 +233,7 @@ class CreateProfileScreen extends StatelessWidget {
                                           color: Colors.white,
                                         )
                                             : const Text(
-                                          "Save",
+                                          AppStrings.save,
                                           style: TextStyle(
                                             fontSize: 16,
                                             color: Colors.white,

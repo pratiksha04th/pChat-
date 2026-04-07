@@ -23,4 +23,17 @@ class FriendRequestModel {
       status: data['status'] ?? 'pending',
     );
   }
+  FriendRequestModel copyWith({
+    String? requestId,
+    String? fromUid,
+    String? toUid,
+    String? status,
+  }) {
+    return FriendRequestModel(
+      requestId: requestId ?? this.requestId,
+      fromUid: fromUid ?? this.fromUid,
+      toUid: toUid ?? this.toUid,
+      status: status ?? this.status,
+    );
+  }
 }

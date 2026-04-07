@@ -16,6 +16,8 @@ class FriendRequestController extends GetxController {
 
   final RxString searchQuery = ''.obs;
   final RxBool isRefreshing = false.obs;
+  final RxBool isLoading = true.obs;
+
 
   final DatabaseReference _requestRef =
   FirebaseDatabase.instance.ref("friendRequests");
@@ -52,26 +54,25 @@ class FriendRequestController extends GetxController {
 
   /// LISTEN FRIEND REQUESTS
   void listenRequests() {
-
     final uid = currentUser?.uid;
     if (uid == null) return;
 
     _requestSub = _requestRef.onValue.listen((event) {
-
       final data = event.snapshot.value;
 
       if (data == null) {
         requests.clear();
         updateFriends(usersController.users);
+        isLoading.value = false;
         return;
       }
 
       final map = Map<String, dynamic>.from(data as Map);
 
+      /// CLEAR ONCE
       requests.clear();
 
       map.forEach((key, value) {
-
         if (value is! Map) return;
 
         final req = FriendRequestModel.fromMap(
@@ -79,89 +80,54 @@ class FriendRequestController extends GetxController {
           Map<String, dynamic>.from(value),
         );
 
-        if (req.fromUid == uid) {
-          requests[req.toUid] = req;
-        }
-        else if (req.toUid == uid) {
-          requests[req.fromUid] = req;
-        }
-        requests.refresh();
+        final uid = currentUser?.uid;
+        /// ONLY STORE RELEVANT REQUESTS
+        if (req.fromUid == uid || req.toUid == uid) {
+          final otherUid =
+          req.fromUid == uid ? req.toUid : req.fromUid;
 
+          requests[otherUid] = req;
+        }
       });
 
-      /// update friends after request change
+      /// REFRESH ONCE
+      requests.refresh();
+
+      /// UPDATE FRIENDS
       updateFriends(usersController.users);
+
+      isLoading.value = false;
     });
   }
 
   /// SEND FRIEND REQUEST
   Future<void> sendRequest(String toUid) async {
-
     final uid = currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null || uid == toUid) return;
 
-    if (uid == toUid) return;
-
-    if (requests.containsKey(toUid)) {
-      Get.snackbar("Request Exists", "Request already sent");
-      return;
-    }
+    if (requests.containsKey(toUid)) return;
 
     final newRef = _requestRef.push();
 
-    final request = FriendRequestModel(
-      requestId: newRef.key!,
-      fromUid: uid,
-      toUid: toUid,
-      status: "pending",
-    );
-
     await newRef.set({
-      "requestId": request.requestId,
-      "fromUid": request.fromUid,
-      "toUid": request.toUid,
-      "status": request.status,
+      "requestId": newRef.key!,
+      "fromUid": uid,
+      "toUid": toUid,
+      "status": "pending",
       "createdAt": ServerValue.timestamp,
     });
-
-    Get.snackbar(
-      "Request Sent",
-      "Friend request sent successfully",
-      snackPosition: SnackPosition.BOTTOM,
-    );
   }
   /// ACCEPT FRIEND REQUEST
   Future<void> acceptRequest(String requestId) async {
-
     await _requestRef.child(requestId).update({
       "status": "accepted",
     });
-
-    Get.snackbar(
-      "Friend Added",
-      "You are now friends",
-      snackPosition: SnackPosition.BOTTOM,
-    );
   }
   /// REJECT FRIEND REQUEST
   Future<void> rejectRequest(String requestId) async {
-    try {
-      await _requestRef.child(requestId).remove();
-
-      Get.snackbar(
-        "Request Removed",
-        "Friend request rejected",
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Failed to reject request",
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
+    await _requestRef.child(requestId).remove();
   }
-  /// UPDATE FRIEND LIST
+  ///UPDATE FRIEND LIST
   void updateFriends(List<AppUser> allUsers) {
 
     final friendIds = requests.entries
@@ -222,10 +188,10 @@ class FriendRequestController extends GetxController {
     friends.clear();
     filteredFriends.clear();
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
 
     listenRequests();
-    isRefreshing.value = false;
 
+    requests.refresh();
   }
 }

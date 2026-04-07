@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
 import '../../../../Core/Widgets/Text_field/input_decoration.dart';
+import '../../../../utilities/App_Strings/app_strings.dart';
 import '../../controller/auth_controlller.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
@@ -75,7 +76,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
                             /// TITLE
                             const Text(
-                              "Forgot Password",
+                              AppStrings.forgotPassword,
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
@@ -85,7 +86,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                             const SizedBox(height: 5),
 
                             const Text(
-                              "Enter your email to reset password",
+                              AppStrings.forgotPasswordSubtitle,
                               style: TextStyle(color: Colors.grey),
                             ),
 
@@ -116,8 +117,8 @@ class ForgotPasswordScreen extends StatelessWidget {
                                       validator: authController.validateEmail,
                                       keyboardType: TextInputType.emailAddress,
                                       decoration: AppInputDecoration.build(
-                                        hint: "example@gmail.com",
-                                        label: "Email",
+                                        hint: AppStrings.emailHint,
+                                        label: AppStrings.email,
                                         icon: Icons.email_outlined,
                                       ),
                                     ),
@@ -155,7 +156,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                                                   color: Colors.white,
                                                 )
                                               : const Text(
-                                                  "Send Reset Email",
+                                                  AppStrings.sendResetEmail,
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     color: Colors.white,
@@ -171,14 +172,14 @@ class ForgotPasswordScreen extends StatelessWidget {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        const Text("Remember your password? "),
+                                        const Text(AppStrings.rememberPassword),
 
                                         GestureDetector(
                                           onTap: () {
                                             Get.back();
                                           },
                                           child: Text(
-                                            "Sign In",
+                                            AppStrings.signIn,
                                             style: TextStyle(
                                               color: AppColors.themeColor,
                                               fontWeight: FontWeight.bold,

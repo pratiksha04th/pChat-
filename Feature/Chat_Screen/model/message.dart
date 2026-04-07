@@ -10,7 +10,9 @@ class Message {
   final String text;
   final int time;
   final bool isDeleted;
-
+  final double? lat;
+  final double? lang;
+  final bool isLocation;
   MessageStatus status;
 
   Message({
@@ -20,6 +22,9 @@ class Message {
     required this.text,
     required this.time,
     required this.isDeleted,
+    this.lat,
+    this.lang,
+    this.isLocation = false,
     this.status = MessageStatus.sent,
   });
 

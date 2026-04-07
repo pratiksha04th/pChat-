@@ -6,6 +6,9 @@ class ChatRoom {
   final String groupName;
   final LastMessage lastMsg;
   int unreadCount;
+  final Map<String,dynamic> deletedFor;
+
+
 
   ChatRoom({
     required this.chatRoomId,
@@ -15,6 +18,7 @@ class ChatRoom {
     required this.groupName,
     required this.lastMsg,
     this.unreadCount = 0,
+    this.deletedFor = const{},
   });
 
   String getOtherUserName(String myUid) {
@@ -51,6 +55,10 @@ class ChatRoom {
         (data['lastMsg'] as Map?) ?? {},
       ),
       unreadCount: 0,
+
+      deletedFor: data['deletedFor'] != null
+          ? Map<String, dynamic>.from(data['deletedFor'])
+          : {},
     );
   }
 
@@ -66,6 +74,7 @@ class ChatRoom {
       "groupName": groupName,
       "lastMsg": lastMsg.toMap(),
       "unreadCount": unreadCount,
+      "deletedFor" : deletedFor ?? {},
     };
   }
 }

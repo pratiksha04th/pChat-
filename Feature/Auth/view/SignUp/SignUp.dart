@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../Core/Widgets/Text_field/input_decoration.dart';
 import '../../../../Core/routes/app_routes.dart';
+import '../../../../utilities/App_Strings/app_strings.dart';
 import '../../controller/auth_controlller.dart';
 import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
@@ -76,7 +77,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           const SizedBox(height: 20),
 
                           const Text(
-                            "Create Account",
+                            AppStrings.createAccount,
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -86,7 +87,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           const SizedBox(height: 5),
 
                           const Text(
-                            "Join us to get started",
+                            AppStrings.signInSubtitle,
                             style: TextStyle(color: Colors.grey),
                           ),
 
@@ -115,8 +116,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     controller: authController.emailController,
                                     validator: authController.validateEmail,
                                     decoration: AppInputDecoration.build(
-                                      hint: 'example@gmail.com',
-                                      label: 'Email',
+                                      hint: AppStrings.emailHint,
+                                      label: AppStrings.email,
                                       icon: Icons.email_outlined,
                                     ),
                                   ),
@@ -129,20 +130,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         authController.usernameController,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return "Username is required";
+                                        return AppStrings.usernameRequired;
                                       }
                                       return null;
                                     },
                                     decoration: AppInputDecoration.build(
-                                      label: "Username",
-                                      hint: "username",
+                                      label: AppStrings.username,
+                                      hint: AppStrings.usernameHint,
+
                                       icon: Icons.person_outline,
                                     ),
                                   ),
 
                                   const SizedBox(height: 15),
 
-                                  /// PASSWORD
                                   /// PASSWORD
                                   Obx(
                                     () => TextFormField(
@@ -154,9 +155,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           authController.obscurePassword.value,
                                       onChanged:
                                           authController.checkPasswordStrength,
-                                      decoration: AppInputDecoration.build(
-                                        hint: '******',
-                                        label: 'Password',
+                                      decoration: AppInputDecoration.build(hint: AppStrings.passwordHint,
+                                        label: AppStrings.password,
+
                                         icon: Icons.lock_outline,
                                         suffixIcon: IconButton(
                                           icon: Icon(
@@ -204,19 +205,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         runSpacing: 6,
                                         children: [
                                           _buildRequirement(
-                                            "1 special character",
+                                            AppStrings.specialChar,
                                             authController.hasSpecialChar.value,
                                           ),
                                           _buildRequirement(
-                                            "1 number",
+                                            AppStrings.number,
                                             authController.hasNumber.value,
                                           ),
                                           _buildRequirement(
-                                            "6+ characters",
+                                            AppStrings.minLength,
                                             authController.hasMinLength.value,
                                           ),
                                           _buildRequirement(
-                                            "1 capital letter",
+                                            AppStrings.capitalLetter,
                                             authController.hasUppercase.value,
                                           ),
                                         ],
@@ -231,8 +232,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     children: [
                                       Checkbox(value: true, onChanged: (v) {}),
                                       const Expanded(
-                                        child: Text(
-                                          "I agree to Terms & Privacy Policy",
+                                        child: const Text(AppStrings.termsAgreement,
                                           style: TextStyle(fontSize: 13),
                                         ),
                                       ),
@@ -266,7 +266,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                   color: Colors.white,
                                                 )
                                               : const Text(
-                                                  "Create Account",
+                                                  AppStrings.createAccount,
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 16,
@@ -298,13 +298,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Already have an account? "),
+                                      const Text(AppStrings.alreadyHaveAccount),
                                       GestureDetector(
                                         onTap: () {
                                           Get.offAllNamed(AppRoutes.signin);
                                         },
                                         child: Text(
-                                          "Sign In",
+                                          AppStrings.signIn,
                                           style: TextStyle(
                                             color: AppColors.themeColor,
                                             fontWeight: FontWeight.bold,

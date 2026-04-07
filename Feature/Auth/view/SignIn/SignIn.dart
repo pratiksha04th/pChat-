@@ -5,6 +5,7 @@ import '../../../../utilities/App_Colors/App_Colors.dart';
 import '../../../../utilities/App_Images/App_Images.dart';
 import '../../../../Core/Widgets/Text_field/input_decoration.dart';
 
+import '../../../../utilities/App_Strings/app_strings.dart';
 import '../../controller/auth_controlller.dart';
 class SignInScreen extends StatelessWidget {
   SignInScreen({super.key});
@@ -69,7 +70,7 @@ class SignInScreen extends StatelessWidget {
                           const SizedBox(height: 20),
 
                           const Text(
-                            "Welcome Back",
+                            AppStrings.welcomeBack,
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -79,7 +80,7 @@ class SignInScreen extends StatelessWidget {
                           const SizedBox(height: 5),
 
                           const Text(
-                            "Sign in to continue",
+                            AppStrings.signInSubtitle,
                             style: TextStyle(color: Colors.grey),
                           ),
 
@@ -110,8 +111,8 @@ class SignInScreen extends StatelessWidget {
                                     validator: authController.validateEmail,
                                     keyboardType: TextInputType.emailAddress,
                                     decoration: AppInputDecoration.build(
-                                      hint: 'example@gmail.com',
-                                      label: 'Email',
+                                      hint: AppStrings.emailHint,
+                                      label: AppStrings.email,
                                       icon: Icons.email_outlined,
                                     ),
                                   ),
@@ -125,8 +126,8 @@ class SignInScreen extends StatelessWidget {
                                     obscureText:
                                     authController.obscurePassword.value,
                                     decoration: AppInputDecoration.build(
-                                      hint: '******',
-                                      label: 'Password',
+                                      hint: AppStrings.passwordHint,
+                                      label: AppStrings.password,
                                       icon: Icons.lock_outline,
                                       suffixIcon: IconButton(
                                         icon: Icon(
@@ -150,7 +151,7 @@ class SignInScreen extends StatelessWidget {
                                         Get.toNamed(AppRoutes.forgetPassword);
                                       },
                                       child: Text(
-                                        "Forgot Password?",
+                                        AppStrings.forgotPasswordQ,
                                         style: TextStyle(
                                           color: AppColors.themeColor,
                                           fontWeight: FontWeight.w600,
@@ -184,7 +185,7 @@ class SignInScreen extends StatelessWidget {
                                         color: Colors.white,
                                       )
                                           : const Text(
-                                        "Sign In",
+                                        AppStrings.signIn,
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -202,7 +203,7 @@ class SignInScreen extends StatelessWidget {
                                       Padding(
                                         padding:
                                         EdgeInsets.symmetric(horizontal: 10),
-                                        child: Text("or"),
+                                        child: Text(AppStrings.or),
                                       ),
                                       Expanded(child: Divider()),
                                     ],
@@ -214,13 +215,13 @@ class SignInScreen extends StatelessWidget {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Don't have an account? "),
+                                      const Text(AppStrings.dontHaveAccount),
                                       GestureDetector(
                                         onTap: () {
                                           Get.toNamed(AppRoutes.signup);
                                         },
                                         child: Text(
-                                          "Sign Up",
+                                          AppStrings.signUp,
                                           style: TextStyle(
                                             color: AppColors.themeColor,
                                             fontWeight: FontWeight.bold,

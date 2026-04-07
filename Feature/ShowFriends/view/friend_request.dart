@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../utilities/App_Colors/App_Colors.dart';
 import '../../../utilities/App_Images/App_Images.dart';
+import '../../../utilities/App_Strings/app_strings.dart';
 import '../controller/friend_request_controller.dart';
 
 class FriendRequest extends StatelessWidget {
@@ -31,42 +32,55 @@ class FriendRequest extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   /// LOGO + TITLE
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          icon: Icon(
+                            Icons.arrow_back_ios_new,
+                            color: AppColors.themeColor,
+                          ),
                         ),
-                        alignment: Alignment.center,
-                        child: Transform.scale(
-                          scale: 1.5,
-                          child: Image.asset(AppImages.logo),
-                        ),
-                      ),
+                        const SizedBox(width: 15),
 
-                      const SizedBox(width: 8),
-
-                      const Text(
-                        "Friend Requests",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                        /// LOGO
+                        Container(
+                          height: 45,
+                          width: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Transform.scale(
+                            scale: 1.5,
+                            child: Image.asset(AppImages.logo),
+                          ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(width: 8),
+
+                        const Text(
+                          AppStrings.friendRequests,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-
 
                   const SizedBox(height: 20),
 
@@ -92,11 +106,13 @@ class FriendRequest extends StatelessWidget {
                         labelColor: Colors.white,
                         unselectedLabelColor: Colors.black54,
 
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
 
                         tabs: const [
-                          Tab(text: "Received"),
-                          Tab(text: "Sent"),
+                          Tab(text: AppStrings.received),
+                          Tab(text: AppStrings.sent),
                         ],
                       ),
                     ),
@@ -108,20 +124,54 @@ class FriendRequest extends StatelessWidget {
                     child: TabBarView(
                       physics: const BouncingScrollPhysics(),
                       children: [
-
                         /// RECEIVED
                         Obx(() {
                           final currentUid = controller.currentUser?.uid;
 
                           final received = controller.requests.values
-                              .where((r) =>
-                          r.toUid == currentUid &&
-                              r.status == "pending")
+                              .where(
+                                (r) =>
+                                    r.toUid == currentUid &&
+                                    r.status == "pending",
+                              )
                               .toList();
 
                           if (received.isEmpty) {
-                            return const Center(
-                              child: Text("No received requests"),
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  /// GRADIENT ICON
+                                  ShaderMask(
+                                    shaderCallback: (bounds) {
+                                      return LinearGradient(
+                                        colors: [
+                                          AppColors.themeColor,
+                                          AppColors.themeColor.withOpacity(0.4),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ).createShader(bounds);
+                                    },
+                                    blendMode: BlendMode.srcIn,
+                                    child: const Icon(
+                                      Icons.person_add_alt_1_outlined,
+                                      size: 50,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 14),
+
+                                  Text(
+                                    "No friend requests yet",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.themeColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             );
                           }
 
@@ -145,14 +195,50 @@ class FriendRequest extends StatelessWidget {
                           final currentUid = controller.currentUser?.uid;
 
                           final sent = controller.requests.values
-                              .where((r) =>
-                          r.fromUid == currentUid &&
-                              r.status == "pending")
+                              .where(
+                                (r) =>
+                                    r.fromUid == currentUid &&
+                                    r.status == "pending",
+                              )
                               .toList();
 
                           if (sent.isEmpty) {
-                            return const Center(
-                              child: Text("No sent requests"),
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  /// GRADIENT ICON
+                                  ShaderMask(
+                                    shaderCallback: (bounds) {
+                                      return LinearGradient(
+                                        colors: [
+                                          AppColors.themeColor,
+                                          AppColors.themeColor.withOpacity(0.4),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ).createShader(bounds);
+                                    },
+                                    blendMode: BlendMode.srcIn,
+                                    child: const Icon(
+                                      Icons.outgoing_mail,
+                                      size: 50,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 14),
+
+                                  Text(
+                                    "No Requests sent",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.themeColor,
+                                    ),
+
+                                  ),
+                                ],
+                              ),
                             );
                           }
 
@@ -188,8 +274,9 @@ class FriendRequest extends StatelessWidget {
     required bool isReceived,
     required String requestId,
   }) {
-    final user = controller.usersController.users
-        .firstWhereOrNull((u) => u.uid == uid);
+    final user = controller.usersController.users.firstWhereOrNull(
+      (u) => u.uid == uid,
+    );
 
     final username = user?.username ?? "User";
 
@@ -200,16 +287,11 @@ class FriendRequest extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          )
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Row(
         children: [
-
           /// AVATAR (first letter of username)
           CircleAvatar(
             radius: 26,
@@ -241,12 +323,9 @@ class FriendRequest extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   isReceived
-                      ? "Sent you a friend request"
-                      : "Request pending...",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                      ? AppStrings.requestReceived
+                      : AppStrings.requestPending,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -255,51 +334,48 @@ class FriendRequest extends StatelessWidget {
           /// ACTIONS
           isReceived
               ? Row(
-            children: [
+                  children: [
+                    /// ACCEPT
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.themeColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      onPressed: () {
+                        controller.acceptRequest(requestId);
+                      },
+                      child: const Text(AppStrings.accept),
+                    ),
 
-              /// ACCEPT
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.themeColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                onPressed: () {
-                  controller.acceptRequest(requestId);
-                },
-                child: const Text("Accept"),
-              ),
+                    const SizedBox(width: 6),
 
-              const SizedBox(width: 6),
-
-              /// REJECT (NEW BUTTON)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                onPressed: () {
-                  controller.rejectRequest(requestId);
-                },
-                child: const Text("Reject"),
-              ),
-            ],
-          )
-
-          /// SENT
+                    /// REJECT (NEW BUTTON)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      onPressed: () {
+                        controller.rejectRequest(requestId);
+                      },
+                      child: const Text(AppStrings.reject),
+                    ),
+                  ],
+                )
+              /// SENT
               : Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              "Pending",
-              style: TextStyle(fontSize: 12),
-            ),
-          ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(AppStrings.pending, style: TextStyle(fontSize: 12)),
+                ),
         ],
       ),
     );

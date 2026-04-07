@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../utilities/App_Images/App_Images.dart';
+import '../../../utilities/App_Strings/app_strings.dart';
 import '../../Chat_Screen/controller/chat_controller.dart';
 import '../../Chat_Screen/model/chat_room.dart';
 import '../../Chat_Screen/view/chat_screen.dart';
@@ -54,7 +55,7 @@ class CreateGroupScreen extends StatelessWidget {
                         const Spacer(),
 
                         const Text(
-                          "New Group",
+                          AppStrings.newGroup,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -103,7 +104,7 @@ class CreateGroupScreen extends StatelessWidget {
                                 decoration: InputDecoration(
                                   prefixIcon: Icon(Icons.group,
                                       color: AppColors.themeColor),
-                                  hintText: "Enter group name",
+                                  hintText: AppStrings.enterGroupName,
                                   border: InputBorder.none,
                                   contentPadding:
                                   const EdgeInsets.symmetric(vertical: 18),
@@ -120,7 +121,7 @@ class CreateGroupScreen extends StatelessWidget {
                             child: Row(
                               children: [
                                 Text(
-                                  "Members (${selectedUsers.length})",
+                                  "${AppStrings.members} (${selectedUsers.length})",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey.shade700,
@@ -133,7 +134,7 @@ class CreateGroupScreen extends StatelessWidget {
                                     Get.back();
                                   },
                                   child: Text(
-                                    "Add Members",
+                                    AppStrings.addMembers,
                                     style: TextStyle(
                                       color: AppColors.themeColor,
                                       fontWeight: FontWeight.bold,
@@ -203,7 +204,7 @@ class CreateGroupScreen extends StatelessWidget {
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Text(
-                                            "Remove",
+                                            AppStrings.remove,
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 12,
@@ -239,13 +240,13 @@ class CreateGroupScreen extends StatelessWidget {
 
                                   if (groupName.isEmpty) {
                                     Get.snackbar(
-                                        "Error", "Please enter a group name");
+                                        AppStrings.error, AppStrings.enterGroupNameError);
                                     return;
                                   }
 
                                   if (selectedUsers.isEmpty) {
-                                    Get.snackbar("Error",
-                                        "Select at least one member");
+                                    Get.snackbar(AppStrings.error,
+                                        AppStrings.selectMemberError);
                                     return;
                                   }
 
@@ -272,7 +273,7 @@ class CreateGroupScreen extends StatelessWidget {
                                   ));
                                 },
                                 child: const Text(
-                                  "Create Group",
+                                  AppStrings.createGroup,
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold),

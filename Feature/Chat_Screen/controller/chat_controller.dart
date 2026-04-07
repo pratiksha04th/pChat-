@@ -70,7 +70,6 @@ class ChatController extends GetxController {
 
     // CLEAR OLD MESSAGES
     allMessages.clear();
-    uiMessages.clear();
 
 
     final myUid = FirebaseAuth.instance.currentUser!.uid;
@@ -329,6 +328,12 @@ class ChatController extends GetxController {
     final chatRoomRef = _db.child("chatRooms/$id");
     final snapshot = await chatRoomRef.get();
 
+    // if already exist
+    if (snapshot.exists) {
+      await chatRoomRef.child("deletedFor/$myUid").remove();
+
+      return id;
+    }
     // Create if not exists
     if (!snapshot.exists) {
       final userCtrl = Get.find<AllUsersController>();
@@ -491,6 +496,8 @@ class ChatController extends GetxController {
         final map = Map<String, dynamic>.from(value);
 
         // only personal chats for now
+        final deletedFor = map["deletedFor"] as Map? ?? {};
+
         final participants = map["participants"] as Map?;
 
         if (map["isGroup"] == true &&
@@ -530,6 +537,7 @@ class ChatController extends GetxController {
   //----------filter Group -----------
   void _filterGroups() {
     final query = searchQuery.value.toLowerCase();
+
 
     if (query.isEmpty) {
       filterGroups.assignAll(groups);
@@ -675,6 +683,9 @@ class ChatController extends GetxController {
         if (map["isGroup"] == true) return;
 
         final participants = map["participants"] as Map?;
+        final deletedFor = map["deletedFor"] as Map? ?? {};
+
+        if (deletedFor[myUid] == true) return;
 
         if (participants != null && participants.containsKey(myUid)) {
 
@@ -710,6 +721,29 @@ class ChatController extends GetxController {
     listenGroups();
   }
 
+  /// remove chat tile locally
+  Future<void> deleteChatForMe(String chatId) async {
+    final myUid = FirebaseAuth.instance.currentUser!.uid;
+
+    await _db.child("chatRooms/$chatId/deletedFor/$myUid").set(true);
+
+    /// remove locally
+    removeChatLocally(chatId);
+  }
+  void removeChatLocally(String chatId) {
+    chatRooms.removeWhere((c) => c.chatRoomId == chatId);
+    groups.removeWhere((g) => g.chatRoomId == chatId);
+
+    filterChats.removeWhere((c) => c.chatRoomId == chatId);
+    filterGroups.removeWhere((g) => g.chatRoomId == chatId);
+  }
+/// clear chat data when back from the chatScreen
+  void clearChatData() {
+    uiMessages.clear();
+    allMessages.clear();
+    selectedMsgIds.clear();
+    selectionMode.value = false;
+  }
 
   // ---------------- CLEANUP ----------------
 

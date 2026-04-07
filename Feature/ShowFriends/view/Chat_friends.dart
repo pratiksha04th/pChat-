@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pchat/Feature/ShowFriends/view/all_friends.dart';
 
-import '../../../Core/Widgets/bottom_nav_bar.dart';
 import '../../../Core/services/connectivity_service.dart';
 import '../../../utilities/App_Colors/App_Colors.dart';
+import '../../../utilities/App_Strings/app_strings.dart';
 import '../../Chat_Screen/controller/chat_controller.dart';
 import '../../Chat_Screen/view/chat_screen.dart';
 import '../../Chat_Screen/model/chat_room.dart';
@@ -13,7 +14,6 @@ import '../../AiAssistant/Features/CallScreen/view/call_screen.dart';
 import '../../AiAssistant/Features/PermissionScreen/view/permission_view.dart';
 
 
-import '../../../utilities/App_Colors/App_Colors.dart';
 import '../../../utilities/App_Images/App_Images.dart';
 
 import '../../../Core/SharedPreferences/session_manager.dart';
@@ -50,7 +50,7 @@ class ChatFriends extends StatelessWidget {
     if (isToday) {
       return "$hour:$minute $amPm";
     } else if (isYesterday) {
-      return "Yesterday, $hour:$minute $amPm";
+      return "${AppStrings.yesterday}, $hour:$minute $amPm";
     } else {
       return "${time.day}/${time.month}/${time.year}, $hour:$minute $amPm";
     }
@@ -103,7 +103,7 @@ class ChatFriends extends StatelessWidget {
 
                       const SizedBox(width: 8),
                       const Text(
-                        "pChat",
+                        AppStrings.appName,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -127,7 +127,7 @@ class ChatFriends extends StatelessWidget {
                         onChanged: chatController.onSearchChanged,
                         decoration: const InputDecoration(
                           icon: Icon(Icons.search),
-                          hintText: "Search friends",
+                          hintText: AppStrings.searchFriends,
                           border: InputBorder.none,
                         ),
                       ),
@@ -136,7 +136,7 @@ class ChatFriends extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  /// TAB SWITCH
+                  /// TAB BAR
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
@@ -161,8 +161,8 @@ class ChatFriends extends StatelessWidget {
                         labelStyle: const TextStyle(fontWeight: FontWeight.bold),
 
                         tabs: const [
-                          Tab(text: "Chats"),
-                          Tab(text: "Groups"),
+                          Tab(text: AppStrings.chats),
+                          Tab(text: AppStrings.groups),
                         ],
                       ),
                     ),
@@ -179,7 +179,6 @@ class ChatFriends extends StatelessWidget {
                         Obx(() {
 
                           final rooms = chatController.filterChats;
-
                           if (rooms.isEmpty) {
                             return const Center(
                               child: Column(
@@ -187,7 +186,7 @@ class ChatFriends extends StatelessWidget {
                                 children: [
                                   Icon(Icons.people_outline, size: 50, color: Colors.grey),
                                   SizedBox(height: 10),
-                                  Text("No chats yet"),
+                                  Text(AppStrings.noChats),
                                 ],
                               ),
                             );
@@ -195,11 +194,11 @@ class ChatFriends extends StatelessWidget {
 
                           return RefreshIndicator(
                             onRefresh:() async {
-                              final conncetivity = Get.find<ConnectivityService>();
+                              final connectivity = Get.find<ConnectivityService>();
 
-                              if (!conncetivity.isOnline.value) {
-                                Get.snackbar("No Internet",
-                                    "Please check your internet connection");
+                              if (!connectivity.isOnline.value) {
+                                Get.snackbar(AppStrings.noInternet,
+                                    AppStrings.checkInternet);
                                 return;
                               }
                               await chatController.refreshChats();
@@ -225,7 +224,29 @@ class ChatFriends extends StatelessWidget {
 
                                 if (user == null) return const SizedBox();
 
-                                return _chatTile(room, user);
+                                return Dismissible(
+                                  key:Key(room.chatRoomId),
+                                    direction: DismissDirection.endToStart,
+
+                                    /// red delete background
+                                    background: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      decoration: BoxDecoration(
+                                        color:Colors.red,
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: const Icon(Icons.delete, color:Colors.white),
+                                    ),
+
+                                    confirmDismiss: (_) async{
+                                    return await _showDeleteDialog(context);
+                                    },
+
+                                    onDismissed: (_){
+                                    chatController.deleteChatForMe(room.chatRoomId);
+                                    },
+                                    child: _chatTile(room, user));
                               },
                             ),
                           );
@@ -233,10 +254,14 @@ class ChatFriends extends StatelessWidget {
 
                         /// GROUPS
                         Obx(() {
-                          final groups = chatController.filterGroups;
+                          final myUid = FirebaseAuth.instance.currentUser!.uid;
+
+                          final groups = chatController.groups.where((g) {
+                            return !(g.deletedFor?[myUid] == true);
+                          }).toList();
 
                           if (groups.isEmpty) {
-                            return const Center(child: Text("No Groups Found"));
+                            return const Center(child: Text(AppStrings.noGroups));
                           }
 
                           return ListView.builder(
@@ -244,7 +269,28 @@ class ChatFriends extends StatelessWidget {
                             itemCount: groups.length,
                             itemBuilder: (context, index) {
                               final group = groups[index];
-                              return _groupTile(group);
+                              return Dismissible(
+                                  key: Key(group.chatRoomId),
+                                  direction: DismissDirection.endToStart,
+
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: const Icon(Icons.delete, color: Colors.white),
+                                  ),
+
+                                  confirmDismiss: (_) async {
+                                    return await _showDeleteDialog(context);
+                                  },
+
+                                  onDismissed: (_) {
+                                    chatController.deleteChatForMe(group.chatRoomId);
+                                  },
+                                  child: _groupTile(group));
                             },
                           );
                         }),
@@ -323,14 +369,24 @@ class ChatFriends extends StatelessWidget {
         child: Row(
           children: [
 
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: AppColors.themeColor.withOpacity(.15),
-              child: Text(
-                user.username[0].toUpperCase(),
-                style: TextStyle(
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.lightAvatarGradient,
+                border: Border.all(
                   color: AppColors.themeColor,
-                  fontWeight: FontWeight.bold,
+                  width: 1,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: Colors.transparent,
+                child: Text(
+                  user.username[0].toUpperCase(),
+                  style: TextStyle(
+                    color: AppColors.themeColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -353,7 +409,7 @@ class ChatFriends extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   Text(
-                    lastMsg.isEmpty ? "Say hello 👋" : lastMsg,
+                    lastMsg.isEmpty ? AppStrings.sayHello: lastMsg,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -407,16 +463,26 @@ class ChatFriends extends StatelessWidget {
         child: Row(
           children: [
             /// GROUP AVATAR
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: AppColors.themeColor.withOpacity(.15),
-              child: Text(
-                group.groupName.isNotEmpty
-                    ? group.groupName[0].toUpperCase()
-                    : "G",
-                style: TextStyle(
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.lightAvatarGradient,
+                border: Border.all(
                   color: AppColors.themeColor,
-                  fontWeight: FontWeight.bold,
+                  width: 1,
+                ),
+        ),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: Colors.transparent,
+                child: Text(
+                  group.groupName.isNotEmpty
+                      ? group.groupName[0].toUpperCase()
+                      : AppStrings.defaultGroupAvatar,
+                  style: TextStyle(
+                    color: AppColors.themeColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -439,7 +505,7 @@ class ChatFriends extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   Text(
-                    lastMsg.isEmpty ? "Start Chat" : lastMsg,
+                    lastMsg.isEmpty ? AppStrings.startChat : lastMsg,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -469,5 +535,30 @@ class ChatFriends extends StatelessWidget {
     await chatController.openChat(otherUid: uid, otherName: name, );
 
     Get.to(() => ChatScreen(chatId: chatId, username: name, otherUserId: uid));
+  }
+
+  /// dialog box
+  Future<bool> _showDeleteDialog(BuildContext context) async {
+    final result = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text("Delete Chat"),
+        content: const Text("Are you sure you want to delete this chat?"),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text(
+              "Delete",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 }

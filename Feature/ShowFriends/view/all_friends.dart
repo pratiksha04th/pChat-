@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../Core/Model/app_user.dart';
 import '../../../Core/routes/app_routes.dart';
 import '../../../Core/services/connectivity_service.dart';
+import '../../../utilities/App_Strings/app_strings.dart';
 import '../../Chat_Screen/controller/chat_controller.dart';
+import '../../Chat_Screen/model/chat_room.dart';
 import '../../Chat_Screen/view/chat_screen.dart';
 
 import '../../../utilities/App_Colors/App_Colors.dart';
@@ -15,12 +18,12 @@ import '../controller/friend_request_controller.dart';
 class AllFriends extends StatelessWidget {
   AllFriends({super.key});
 
-  final RxInt selectedTab = 0.obs;
   final RxBool isRefreshing = false.obs;
 
   final FriendRequestController requestController = Get.find();
   final ChatController chatController = Get.find();
   final AllUsersController usersController = Get.find();
+
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +48,7 @@ class AllFriends extends StatelessWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.arrow_back_ios_new),
+                          color: AppColors.themeColor,
                           onPressed: () {
                             Get.back();
                           },
@@ -75,7 +79,7 @@ class AllFriends extends StatelessWidget {
 
                         const SizedBox(width: 8),
                       const Text(
-                        "pChat",
+                        AppStrings.appName,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -101,7 +105,7 @@ class AllFriends extends StatelessWidget {
                         onChanged: requestController.onSearchChanged,
                         decoration: const InputDecoration(
                           icon: Icon(Icons.search),
-                          hintText: "Search friends",
+                          hintText: AppStrings.searchFriends,
                           border: InputBorder.none,
                         ),
                       ),
@@ -113,7 +117,18 @@ class AllFriends extends StatelessWidget {
                   /// LIST VIEW
                   Expanded(
                     child: Obx(() {
+                      final query = requestController.searchQuery.value.toLowerCase();
+
                       final friends = requestController.filteredFriends;
+
+                      final groups = chatController.groups.where((g) {
+                        return g.groupName.toLowerCase().contains(query);
+                      }).toList();
+
+                      final combinedList = [
+                        ...groups.map((g) => {"type": "group", "data": g}),
+                        ...friends.map((f) => {"type": "user", "data": f}),
+                      ];
 
                       final isLoading = requestController.isRefreshing.value;
 
@@ -123,14 +138,14 @@ class AllFriends extends StatelessWidget {
                         );
                       }
 
-                      if (friends.isEmpty) {
+                      if (combinedList.isEmpty) {
                         return const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.people_outline, size: 50, color: Colors.grey),
                               SizedBox(height: 10),
-                              Text("No friends yet"),
+                              Text(AppStrings.noFriends),
                             ],
                           ),
                         );
@@ -140,18 +155,24 @@ class AllFriends extends StatelessWidget {
                         onRefresh: _onRefreshFriends,
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: friends.length,
+                          itemCount: combinedList.length,
                           itemBuilder: (context, index) {
-                            final user = friends[index];
+                            final item = combinedList[index];
 
-                            return _contactTile(
-                              uid: user.uid,
-                              username: user.username,
-                              firstName: user.firstName,
-                              lastName: user.lastName,
-                              gender: user.gender,
-                              dob: user.dob,
-                            );
+                            if(item["type"] == "group"){
+                              final group = item["data"] as ChatRoom;
+                              return _groupTile(group);
+                            }else {
+                              final user = item["data"] as AppUser;
+                              return _contactTile(
+                                uid: user.uid,
+                                username: user.username,
+                                firstName: user.firstName,
+                                lastName: user.lastName,
+                                gender: user.gender,
+                                dob: user.dob,
+                              );
+                            }
                           },
                         ),
                       );
@@ -169,7 +190,7 @@ class AllFriends extends StatelessWidget {
           backgroundColor: AppColors.themeColor,
           foregroundColor: Colors.white,
           icon: Icon(count > 0 ? Icons.check : Icons.group_add),
-          label: Text(count > 0 ? "Create ($count)" : "Create Group"),
+          label: Text(count > 0 ? "${AppStrings.create} ($count)" : AppStrings.createGroup),
           onPressed: () {
             if (count > 0) {
               final selectedUids = usersController.selectedGroupUsers.toList();
@@ -246,23 +267,33 @@ class AllFriends extends StatelessWidget {
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor:
-                AppColors.themeColor.withOpacity(.15),
-                child: Text(
-                  username.isNotEmpty
-                      ? username[0].toUpperCase()
-                      : "U",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppColors.lightAvatarGradient,
+                  border: Border.all(
                     color: AppColors.themeColor,
+                    width: 1,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundColor:
+                  Colors.transparent,
+                  child: Text(
+                    username.isNotEmpty
+                        ? username[0].toUpperCase()
+                        : AppStrings.defaultAvatar,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.themeColor,
+                    ),
                   ),
                 ),
               ),
 
-              const SizedBox(width: 16),
+              const SizedBox(width: 10),
 
               Expanded(
                 child: Column(
@@ -293,7 +324,7 @@ class AllFriends extends StatelessWidget {
                     Row(
                       children: [
                         if (age > 0)
-                          Text("$age yrs",
+                          Text("$age ${AppStrings.yearsShort}",
                               style: TextStyle(
                                   fontSize: 12,
                                   color:
@@ -339,7 +370,7 @@ class AllFriends extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey),
                     onPressed: null,
-                    child: const Text("Pending"),
+                    child: const Text(AppStrings.pending),
                   );
                 }
 
@@ -353,7 +384,7 @@ class AllFriends extends StatelessWidget {
                       requestController
                           .acceptRequest(req.requestId);
                     },
-                    child: const Text("Accept"),
+                    child: const Text(AppStrings.accept),
                   );
                 }
 
@@ -366,7 +397,7 @@ class AllFriends extends StatelessWidget {
                         foregroundColor: Colors.white),
                     onPressed: () =>
                         _openChat(uid, username),
-                    child: const Text("Start Chat"),
+                    child: const Text(AppStrings.openChat),
                   );
                 }
 
@@ -376,7 +407,7 @@ class AllFriends extends StatelessWidget {
                       AppColors.themeColor),
                   onPressed: () =>
                       requestController.sendRequest(uid),
-                  child: const Text("Add Friend"),
+                  child: const Text(AppStrings.addFriend),
                 );
               }),
             ],
@@ -384,6 +415,98 @@ class AllFriends extends StatelessWidget {
         ),
       );
     });
+  }
+
+  /// group tile
+  Widget _groupTile(ChatRoom group) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          /// GROUP AVATAR
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppColors.lightAvatarGradient,
+              border: Border.all(
+                color: AppColors.themeColor,
+                width: 1,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.transparent,
+              child: Text(
+                group.groupName.isNotEmpty
+                    ? group.groupName[0].toUpperCase()
+                    : "G",
+                style: TextStyle(
+                  color: AppColors.themeColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          /// GROUP NAME + MEMBERS
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  group.groupName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  "${group.participants.length} members",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          /// BUTTON
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.themeColor,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Get.to(() => ChatScreen(
+                chatId: group.chatRoomId,
+                username: group.groupName,
+                otherUserId: "group",
+              ));
+            },
+            child: const Text(AppStrings.openGroup),
+          ),
+        ],
+      ),
+    );
   }
 
 
@@ -399,8 +522,8 @@ class AllFriends extends StatelessWidget {
 
     if (!connectivity.isOnline.value) {
       Get.snackbar(
-        "No Internet",
-        "Check your connection",
+        AppStrings.noInternet,
+        AppStrings.checkInternet,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -409,7 +532,7 @@ class AllFriends extends StatelessWidget {
     try {
       await requestController.refreshFriends();
     } catch (e) {
-      Get.snackbar("Error", "Failed to refresh");
+      Get.snackbar(AppStrings.error, AppStrings.failedToRefresh);
     }
   }
 }
