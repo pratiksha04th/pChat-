@@ -22,6 +22,9 @@ class AppUser {
   final bool isOnline;
   final int lastSeen;
 
+  final double lat;
+  final double lng;
+
   AppUser({
     required this.uid,
     required this.email,
@@ -37,7 +40,9 @@ class AppUser {
     required this.createdAt,
     required this.lastUpdated,
     required this.isOnline,
-    required this.lastSeen
+    required this.lastSeen,
+    required this.lat,
+    required this.lng,
   });
 
   /// Firebase -> Model
@@ -66,6 +71,9 @@ class AppUser {
 
       isOnline: data["isOnline"] ?? false,
       lastSeen: data['lastSeen'] ?? 0,
+
+      lat: (data['lat'] ?? 0.0).toDouble(),
+      lng: (data['lng'] ?? 0.0).toDouble(),
     );
   }
 
@@ -99,6 +107,10 @@ class AppUser {
 
   /// Useful when updating user fields
   AppUser copyWith({
+    String? username,
+    String? email,
+    String? gender,
+    String? dob,
     String? firstName,
     String? lastName,
     String? profileImage,
@@ -109,13 +121,13 @@ class AppUser {
 
     return AppUser(
       uid: uid,
-      email: email,
-      username: username,
+      email: email ?? this.email,
+      username: username ?? this.username,
 
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      gender: gender,
-      dob: dob,
+      gender: gender ?? this.gender,
+      dob: dob ?? this.dob,
 
       profileCompleted: profileCompleted,
 
@@ -129,6 +141,9 @@ class AppUser {
 
       isOnline: isOnline ?? this.isOnline,
       lastSeen: lastSeen ?? this.lastSeen,
+
+      lat: lat,
+      lng: lng,
     );
   }
 }

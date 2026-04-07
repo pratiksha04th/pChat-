@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:pchat/Core/services/connectivity_service.dart';
 
 import '../../Feature/Home/view/home_screen.dart';
+import '../../SearchTab/search_screen.dart';
 import '../../Feature/Profile/view/profile_screen.dart';
 import '../../Feature/ShowFriends/view/Chat_friends.dart';
 import '../../Feature/ShowFriends/view/friend_request.dart';
@@ -27,7 +28,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> pages = [
     HomeScreen(),
     ChatFriends(),
-    FriendRequest(),
+    SearchScreen(),
     ProfileScreen(),
   ];
 
