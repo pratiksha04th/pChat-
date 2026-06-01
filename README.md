@@ -194,7 +194,7 @@ lib/
 
 | Friend Live Location | Ai voice assistant call |
 |------|------|
-| ![](assets/screenshots/screenshot10.jpeg) | ![](assets/screenshots/screenshot12.jpeg) |
+| ![](assets/screenshots/screenshot11.jpeg) | ![](assets/screenshots/screenshot12.jpeg) |
 
 ---
 
