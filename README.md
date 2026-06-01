@@ -172,14 +172,13 @@ lib/
 
 ## 📸 Screenshots
 
-### Home Screen
-![Splash Screen](assets/screenshots/screenshot1.jpeg)
+| Splash | Auth |
+|------|------|
+| ![](assets/screenshots/screenshot1.jpeg) | ![](assets/screenshots/screenshot2.jpeg) |
 
-### Chat Screen
-![Chat Screen](screenshots/chat.png)
-
-### Maps Screen
-![Maps Screen](screenshots/maps.png)
+| Post | Text Scanner |
+|------|------|
+| ![](assets/screenshots/screenshot3.jpeg) | ![](assets/screenshots/screenshot4.jpeg) |
 
 ---
 
