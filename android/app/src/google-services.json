@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "34805208017",
+    "firebase_url": "https://pchat-cc35c-default-rtdb.firebaseio.com",
+    "project_id": "pchat-cc35c",
+    "storage_bucket": "pchat-cc35c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:34805208017:android:7a2d713b905f3461d486f0",
+        "android_client_info": {
+          "package_name": "com.example.pchat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "34805208017-ch36onc960jf3sbdqnrocmn2etlf9nqf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPSLTUIaY-v2i_l-08JXy-RZ-l-TnRvkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "34805208017-ch36onc960jf3sbdqnrocmn2etlf9nqf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
