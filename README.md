@@ -170,12 +170,16 @@ lib/
 
 ```
 
-# 📸 Screenshots
+## 📸 Screenshots
 
-[Home Screen](assets/screenshot/screenshot1.jpeg)
+### Home Screen
+![Splash Screen](assets/screenshots/screenshot1.jpeg)
+
+### Chat Screen
 ![Chat Screen](screenshots/chat.png)
+
+### Maps Screen
 ![Maps Screen](screenshots/maps.png)
-```
 
 ---
 
