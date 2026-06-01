@@ -172,10 +172,7 @@ lib/
 
 # 📸 Screenshots
 
-*Add screenshots here later*
-
-```md id="mlndit"
-![Home Screen](screenshots/home.png)
+[Home Screen](assets/screenshot/screenshot1.jpeg)
 ![Chat Screen](screenshots/chat.png)
 ![Maps Screen](screenshots/maps.png)
 ```
