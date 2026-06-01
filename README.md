@@ -176,9 +176,25 @@ lib/
 |------|------|
 | ![](assets/screenshots/screenshot1.jpeg) | ![](assets/screenshots/screenshot2.jpeg) |
 
-| Post | Text Scanner |
+| Create Post | Text Scanner |
 |------|------|
 | ![](assets/screenshots/screenshot3.jpeg) | ![](assets/screenshots/screenshot4.jpeg) |
+
+|  Post | Feed |
+|------|------|
+| ![](assets/screenshots/screenshot5.jpeg) | ![](assets/screenshots/screenshot6.jpeg) |
+
+| Profile | Edit Profile |
+|------|------|
+| ![](assets/screenshots/screenshot7.jpeg) | ![](assets/screenshots/screenshot8.jpeg) |
+
+| All User | Request Notifications |
+|------|------|
+| ![](assets/screenshots/screenshot9.jpeg) | ![](assets/screenshots/screenshot10.jpeg) |
+
+| Friend Live Location | Ai voice assistant call |
+|------|------|
+| ![](assets/screenshots/screenshot10.jpeg) | ![](assets/screenshots/screenshot12.jpeg) |
 
 ---
 
